@@ -19,7 +19,6 @@ export const failures = pgTable("failures", {
   test: text("test").notNull(),
   specPath: text("specPath").notNull(),
   browser: text("browser").notNull(),
-  browserVersion: text("browserVersion"),
   viewport: text("viewport").notNull(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
   screenshotPath: text("screenshotPath"),
@@ -31,15 +30,13 @@ export const failures = pgTable("failures", {
   selectorContext: jsonb("selectorContext").notNull(),
   errorMessage: text("errorMessage"),
   status: text("status").default("new").notNull(), // new, suggested, approved, rejected
-  browserCompatibility: jsonb("browserCompatibility").default({}), // Browser-specific analysis data
 });
 
 export const suggestions = pgTable("suggestions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   failureId: varchar("failureId").notNull(),
-  candidates: jsonb("candidates").notNull(), // Array of {selector, type, rationale, confidence, source, browserSupport}
+  candidates: jsonb("candidates").notNull(), // Array of {selector, type, rationale, confidence, source}
   topChoice: text("topChoice"),
-  browserAnalysis: jsonb("browserAnalysis").default({}), // Cross-browser compatibility analysis
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
