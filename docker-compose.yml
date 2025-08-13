@@ -1,56 +1,31 @@
 version: '3.8'
 
 services:
-  mongo:
-    image: mongo:7
-    container_name: autoheal-mongo
-    restart: unless-stopped
+  app:
+    build: .
     ports:
-      - "27017:27017"
+      - "5000:5000"
     environment:
-      MONGO_INITDB_DATABASE: autoheal
-    volumes:
-      - mongo_data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-
-  api:
-    build:
-      context: .
-      dockerfile: packages/api/Dockerfile
-    container_name: autoheal-api
-    restart: unless-stopped
-    ports:
-      - "4000:4000"
-    environment:
-      - PORT=4000
-      - MONGO_URI=mongodb://mongo:27017/autoheal
-      - ARTIFACT_STORAGE=gridfs
-      - LLM_PROVIDER=${LLM_PROVIDER:-mock}
-      - LLM_API_KEY=${LLM_API_KEY}
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://autoheal_user:autoheal_password@db:5432/autoheal
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - REPO_FULL_NAME=${REPO_FULL_NAME:-org/repo}
-      - DEFAULT_BRANCH=${DEFAULT_BRANCH:-main}
-      - ALLOW_CROSS_ORIGIN=true
-      - MAX_PAYLOAD_MB=50
     depends_on:
-      - mongo
+      - db
     volumes:
-      - ./shared:/app/shared
-      - uploads_data:/app/uploads
+      - ./uploads:/app/uploads
 
-  web:
-    build:
-      context: .
-      dockerfile: packages/web/Dockerfile
-    container_name: autoheal-web
-    restart: unless-stopped
-    ports:
-      - "5173:5173"
+  db:
+    image: postgres:15
     environment:
-      - VITE_API_URL=http://localhost:4000
-    depends_on:
-      - api
+      - POSTGRES_DB=autoheal
+      - POSTGRES_USER=autoheal_user
+      - POSTGRES_PASSWORD=autoheal_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "5432:5432"
 
 volumes:
-  mongo_data:
-  uploads_data:
+  postgres_data:
