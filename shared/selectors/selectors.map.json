@@ -1,0 +1,7 @@
+{
+  "home.loginButton": "[data-testid=\"login-submit-btn\"]",
+  "home.usernameInput": "[data-testid=\"input-username\"]", 
+  "home.passwordInput": "[data-testid=\"input-password\"]",
+  "nav.dashboard": "[data-testid=\"nav-dashboard\"]",
+  "search.input": "[data-testid=\"search-input\"]"
+}
