@@ -29,7 +29,7 @@ interface Failure {
 
 export default function FailureList({ filters, onFailureSelect, selectedFailureId }: FailureListProps) {
   const { data: failures, isLoading, error } = useQuery<Failure[]>({
-    queryKey: ['/api/failures', filters],
+    queryKey: ['/api', 'failures'],
     enabled: true,
   });
 

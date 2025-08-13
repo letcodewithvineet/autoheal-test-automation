@@ -37,7 +37,7 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
   const queryClient = useQueryClient();
   
   const { data: failure, isLoading } = useQuery<FailureDetails>({
-    queryKey: ['/api/failures', failureId],
+    queryKey: ['/api', 'failures', failureId],
     enabled: !!failureId,
   });
 
