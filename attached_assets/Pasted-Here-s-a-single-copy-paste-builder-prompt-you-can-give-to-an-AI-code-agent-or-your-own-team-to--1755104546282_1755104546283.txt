@@ -1,0 +1,359 @@
+Here’s a single, copy‑paste “builder prompt” you can give to an AI code agent (or your own team) to scaffold and implement the PoC end‑to‑end exactly as you described.
+
+---
+
+# Build Prompt — Self‑Healing Test Automation (MERN + Cypress + AI)
+
+You are an expert full‑stack and test‑automation engineer. Create a working PoC called **autoheal** that delivers a *self‑healing test automation* loop using **MERN + Cypress + AI**.
+
+## Objectives (scope for PoC)
+
+1. **Cypress plugin** to capture failure artifacts and POST them to an API:
+
+   * Artifacts: DOM HTML snapshot, console logs, network logs (HAR‑like), screenshot, test metadata (suite, test name, spec, tags, commit SHA, CI run id, browser, viewport, timestamp).
+   * Works in headless CI and local.
+   * Minimal config in `cypress.config.{js,ts}`.
+
+2. **AI microservice** to propose selectors with:
+
+   * **Heuristics first:** prefer `data-testid`, `aria-label`, `role` → fall back to **anchored CSS** (stable parent + text proximity).
+   * **LLM re‑scoring**: re‑rank candidates with a short rationale + confidence (0–1).
+   * Returns top‑N suggestions with rationale + confidence, plus the “why current locator failed”.
+
+3. **MERN dashboard (React + Node/Express + MongoDB)**:
+
+   * Browse failures, view suggested selectors, screenshot diff (before vs fail), DOM snippet.
+   * Approve/Reject suggestions; approved ones are stored as “patches”.
+
+4. **Git automation**:
+
+   * Approved changes update a **selectors map** (JSON) or **Page Object** files.
+   * Open a PR from a bot branch, tag owners (CODEOWNERS), and optionally trigger CI re‑run.
+
+5. **Dev‑friendly**: one‑command start with Docker Compose; seed data; example Cypress tests to generate a failure.
+
+---
+
+## High‑Level Architecture (include verbatim)
+
+```mermaid
+flowchart TD
+  A[Cypress Runner\n(test fails)] --> B[AutoHeal Cypress Plugin]
+  B -->|POST /failures| C[AutoHeal API (Node/Express)]
+  B -->|Artifacts: DOM HTML, logs, screenshot| C
+
+  C --> D[Preprocessor\n(HTML parser, heuristics)]
+  D --> E[AI Selector Advisor\n(LLM + rules)]
+  E --> F[(MongoDB)]
+  D --> F
+
+  F --> G[AutoHeal UI (React)]
+  G -->|Approve/Reject| H[PR Service\n(GitHub App/Bot)]
+  H --> I[Repo\n(Page Objects / selectors map)]
+  I --> J[CI Rerun]
+  J --> A
+```
+
+---
+
+## Tech & conventions
+
+* **Backend**: Node 20+, Express, TypeScript, zod for validation, mongodb driver or Mongoose.
+* **DB**: MongoDB (local via Docker). Collections: `failures`, `suggestions`, `approvals`, `runs`, `selectors`.
+* **Frontend**: React + Vite + TypeScript, Tailwind, shadcn/ui (or Material UI) for speed.
+* **Cypress**: v13+, TypeScript; plugin in `cypress/plugins/autoheal.ts` + custom commands; enable screenshots/videos and console/network capture.
+* **AI**: Local rules + pluggable LLM client (abstract interface). Provide a mock LLM (deterministic) + a real client behind `LLM_PROVIDER`/`LLM_API_KEY` env.
+* **Git bot**: GitHub App or PAT workflow; use Octokit. Create branch `autoheal/update-<shortSHA>-<testName>`, push selectors update, open PR, request reviews from CODEOWNERS.
+* **Containerization**: Dockerfiles for API & UI; `docker-compose.yml` wiring API, UI, Mongo, and a seeded MinIO (optional) for artifact storage; otherwise store binaries in Mongo GridFS.
+
+---
+
+## Repository layout
+
+```
+autoheal/
+  README.md
+  docker-compose.yml
+  packages/
+    api/
+      src/
+        index.ts
+        routes/
+          failures.ts
+          suggestions.ts
+          approvals.ts
+          selectors.ts
+          git.ts
+        services/
+          preprocess/
+            extractDom.ts
+            consoleNetwork.ts
+          heuristics/
+            candidates.ts
+            anchors.ts
+            textProximity.ts
+            scoring.ts
+          ai/
+            llmClient.ts     // interface
+            llmMock.ts
+            llmOpenAI.ts     // or provider adapter
+            advisor.ts
+          git/
+            prService.ts
+          storage/
+            mongo.ts
+            gridfs.ts
+        models/
+          Failure.ts
+          Suggestion.ts
+          Approval.ts
+          Selector.ts
+          Run.ts
+        utils/
+          logger.ts
+          env.ts
+        schemas/
+          failurePayload.ts  // zod
+      package.json
+      Dockerfile
+    web/
+      src/
+        main.tsx
+        app.tsx
+        components/
+          FailureList.tsx
+          FailureDetail.tsx
+          SuggestionCard.tsx
+          ScreenshotDiff.tsx
+          ApproveModal.tsx
+        lib/api.ts
+        styles.css
+      vite.config.ts
+      package.json
+      Dockerfile
+    cypress-demo/
+      cypress/
+        e2e/
+          failing.spec.ts       // intentionally flaky locator
+        fixtures/
+        support/
+          e2e.ts
+          commands.ts
+          autoheal.ts           // plugin integration & hooks
+      cypress.config.ts
+      package.json
+  shared/
+    selectors/
+      pageObjects/
+        home.po.ts
+      selectors.map.json        // canonical mapping updated by bot
+  .github/
+    workflows/
+      ci.yml                    // run Cypress & post artifacts; permit workflow_dispatch rerun
+```
+
+---
+
+## Data models (Mongoose or plain driver)
+
+* **Failure**
+
+  * `_id`, `runId`, `repo`, `branch`, `commit`, `suite`, `test`, `specPath`, `browser`, `viewport`, `timestamp`, `screenshotPath|gridfsId`, `domHtml`, `consoleLogs`, `networkLogs`, `currentSelector`, `selectorContext` (DOM path, neighbors).
+* **Suggestion**
+
+  * `_id`, `failureId`, `candidates: {selector, type, rationale, confidence, source: "heuristic"|"llm"}[]`, `topChoice`, `createdAt`.
+* **Approval**
+
+  * `_id`, `suggestionId`, `approvedBy`, `decision: "approve"|"reject"`, `notes`, `createdAt`.
+* **Selector**
+
+  * `_id`, `page`, `name`, `current`, `history: {selector, commit, approvedAt}[]`.
+
+---
+
+## API contracts (Express)
+
+* `POST /api/failures`
+
+  * Body: validated by zod; multipart for screenshot or base64.
+  * Creates Failure, triggers preprocessing + suggestion pipeline asynchronously; returns `failureId`.
+* `GET /api/failures?status=&test=&since=`
+
+  * Paginated list with counts.
+* `GET /api/failures/:id`
+
+  * Full detail + latest suggestions.
+* `POST /api/failures/:id/suggest`
+
+  * Manually retrigger advisor; returns suggestions.
+* `POST /api/approvals`
+
+  * `{ suggestionId, decision, notes }` → if approved, write to `selectors.map.json` (or Page Object), commit on bot branch, open PR.
+* `POST /api/git/pr/:suggestionId/retry`
+
+  * Recreate/update PR if needed.
+* `GET /api/selectors/:page`
+
+  * Returns current selector map for a page or Page Object export.
+
+Return shapes include `rationale` and `confidence` for each candidate.
+
+---
+
+## Heuristics (implement exactly)
+
+1. **Preferred attributes**: If element has `data-testid`, return `[data-testid="<value>"]`.
+2. Then `aria-label`, `role`, `name` (for inputs/buttons).
+3. If still no stable attribute, build **anchored CSS**:
+
+   * Choose a stable ancestor (with stable attr above or semantic landmark like `header`, `main`, `nav`, `footer`, `[role]`).
+   * Combine with child tag and minimal class subset; avoid nth-child unless necessary.
+   * Add **text proximity**: include `:has(:text("Nearby Text"))` or fallback to `xpath(//*)` representation when CSS cannot target text. Provide both CSS and XPath if needed.
+4. **Score** candidates by:
+
+   * Stability (custom attr > aria > role > tag/class).
+   * Specificity (shorter, unique within scope).
+   * Robustness (resistant to minor DOM changes).
+   * Penalize dynamic classes / IDs with digits or GUID‑like patterns.
+
+**Output top 5** with `score` ∈ \[0,1] (normalized).
+
+---
+
+## LLM re‑scoring
+
+* Build `prompt` = DOM snippet (outerHTML of element + parents up to stable ancestor), failing selector, intended action (click/type/assert), nearby texts.
+* Ask the model to:
+
+  * Re‑rank the 5 heuristic candidates.
+  * Provide concise **rationale (≤40 words)** per top 3.
+  * Return JSON: `{ranked:[{selector, rationale, confidence}], explanationOfFailure}`.
+* Provide **mock** re‑scorer (deterministic rules) and an **adapter** for a real provider via `LLM_PROVIDER`/`LLM_API_KEY`.
+* If LLM call fails or times out, fall back to heuristic ranking only.
+
+---
+
+## Cypress integration (must‑have)
+
+* In `cypress.config.ts`, register:
+
+  * `after:screenshot`, `task` hooks to gather console + network logs.
+  * On test failure (`afterEach`), collect:
+
+    * `cy.screenshot()` (path),
+    * `document.documentElement.outerHTML`,
+    * console/network logs captured via `cy.on('window:before:load', ...)` and `Cypress.on('log:added', ...)` or via plugin like `@cypress/browserify-preprocessor` + custom.
+  * POST to `/api/failures`.
+* Provide `CYPRESS_AUTOHEAL_API_URL` env and a toggle `autoheal: true/false`.
+* Include a **demo failing test** with an intentionally brittle selector, and a **“fixed”** version using `selectors.map.json` loaded via a custom command `cy.sel('home.loginButton')`.
+
+---
+
+## UI features (web)
+
+* **Failures List**: sortable by time, spec, test, repo; status pill (New, Suggested, Approved, Rejected).
+* **Failure Detail**:
+
+  * Left: **Screenshot diff** (failed vs baseline or side‑by‑side if baseline missing).
+  * Right: DOM snippet, current selector, **suggested selectors** with rationale+confidence, copy buttons.
+  * **Approve/Reject** modal with note.
+* **Selectors View**:
+
+  * Show current `selectors.map.json` and history for a key.
+* Use a simple read‑only **diff viewer** for selector changes.
+
+---
+
+## Git automation
+
+* Provide `GITHUB_APP_ID`, `GITHUB_INSTALLATION_ID`, `GITHUB_PRIVATE_KEY` (PEM) **or** fallback PAT `GITHUB_TOKEN`.
+* On approval:
+
+  * Update `shared/selectors/selectors.map.json` or the relevant Page Object file.
+  * Commit with message: `chore(autoheal): update selector for <page.key> (#<failureId>)`.
+  * Create PR from `autoheal/update-<shortSHA>-<testName>` to default branch.
+  * Add labels `autoheal`, `test-fix`.
+  * Request reviews from CODEOWNERS.
+  * Optionally call GitHub Actions `workflow_dispatch` to re‑run CI.
+
+---
+
+## Environment & config
+
+* `.env.example` with:
+
+  * `PORT=4000`
+  * `MONGO_URI=mongodb://mongo:27017/autoheal`
+  * `ARTIFACT_STORAGE=gridfs|fs`
+  * `LLM_PROVIDER=mock|openai`
+  * `LLM_API_KEY=`
+  * `GITHUB_TOKEN=` or `GITHUB_APP_*`
+  * `REPO_FULL_NAME=org/repo`
+  * `DEFAULT_BRANCH=main`
+  * `ALLOW_CROSS_ORIGIN=true`
+  * `MAX_PAYLOAD_MB=50`
+* Backend must enforce payload size limits and sanitize HTML.
+
+---
+
+## Security & reliability (PoC‑level)
+
+* Validate all request bodies with zod; reject oversized payloads.
+* Strip scripts from stored DOM.
+* Store binaries in GridFS (or FS) with reference IDs.
+* Basic rate limit (e.g., `express-rate-limit`).
+* Log with pino; correlate with `runId`.
+
+---
+
+## Testing & demo
+
+* Seed script: `pnpm seed` → creates 3 fake failures with generated suggestions.
+* Demo script: `pnpm demo` → runs cypress-demo in headless to produce a failure and send artifacts.
+* Unit tests for:
+
+  * Heuristic candidate generation,
+  * Scoring,
+  * LLM adapter (mock),
+  * API validators.
+* E2E smoke: approve a suggestion → bot opens PR (use a sandbox repo).
+
+---
+
+## Commands
+
+* Root:
+
+  * `pnpm i` (monorepo), `pnpm -r build`, `docker compose up --build`
+* API: `pnpm dev` (ts-node-dev), `pnpm test`
+* Web: `pnpm dev`
+* Cypress demo: `pnpm cypress:run`
+
+---
+
+## Deliverables
+
+1. Running Docker Compose stack: Mongo, API on `:4000`, Web on `:5173`.
+2. Cypress demo showing a failing locator posting to API.
+3. Dashboard listing the failure and AI suggestions; Approve → PR opened.
+4. README with setup steps, envs, and demo walkthrough (screenshots/gifs).
+
+---
+
+## Acceptance criteria
+
+* Heuristics produce ≥1 valid selector for the demo page; LLM mock re‑ranks them and emits rationale.
+* Approving a suggestion updates `selectors.map.json`, commits to a branch, opens a PR with labels and requested reviewers.
+* CI rerun (mock or actual `workflow_dispatch`) is triggered after PR creation (optional but wired).
+* UI shows screenshot diff and confidence values.
+
+---
+
+## Important notes
+
+* Do **not** hardcode any proprietary keys. Use `.env`.
+* Keep the LLM layer behind an interface so we can swap providers.
+* If text‑selectors via `:has(:contains())` are unsupported in target browsers, include XPath fallback.
+* Make all demo assets generic.
+
+**Now generate the full repository with code, configuration, and instructions as specified.**
