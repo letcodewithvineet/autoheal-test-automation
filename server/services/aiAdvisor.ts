@@ -2,7 +2,10 @@ import OpenAI from "openai";
 import type { Failure } from "@shared/schema";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Initialize OpenAI client only if API key is provided (for demo mode compatibility)
+const openai = process.env.OPENAI_API_KEY 
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  : null;
 
 export interface SelectorCandidate {
   selector: string;
@@ -130,6 +133,12 @@ export class AIAdvisor {
    * Generate selector candidates using AI analysis
    */
   private async generateAICandidates(failure: Failure): Promise<SelectorCandidate[]> {
+    // Skip AI analysis if OpenAI client not available (demo mode)
+    if (!openai) {
+      console.log('OpenAI API key not provided - using heuristic-only mode for demo');
+      return [];
+    }
+    
     try {
       const prompt = this.buildAIPrompt(failure);
       
