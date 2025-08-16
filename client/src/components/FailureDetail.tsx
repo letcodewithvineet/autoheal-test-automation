@@ -120,19 +120,27 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
           <h4 className="font-semibold text-slate-800 mb-3" data-testid="screenshot-section-title">Screenshot at Failure</h4>
           <div className="border border-slate-200 rounded-lg overflow-hidden">
             {failure.screenshotPath ? (
-              <img 
-                src={failure.screenshotPath} 
-                alt="Failure screenshot"
-                className="w-full h-48 object-cover"
-                data-testid="failure-screenshot"
-              />
+              <div className="relative">
+                <img 
+                  src={`/api${failure.screenshotPath}`} 
+                  alt="Failure screenshot"
+                  className="w-full h-auto"
+                  data-testid="failure-screenshot"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50"><i class="fas fa-image text-3xl mb-2"></i><p>Screenshot not available</p></div>';
+                    }
+                  }}
+                />
+              </div>
             ) : (
-              <div className="bg-gray-100 h-48 flex items-center justify-center text-slate-500">
-                <div className="text-center">
-                  <i className="fas fa-image text-4xl mb-2"></i>
-                  <div className="text-sm">Screenshot: 1920x1080</div>
-                  <div className="text-xs">Captured at failure point</div>
-                </div>
+              <div className="p-8 text-center text-slate-500 bg-slate-50">
+                <i className="fas fa-image text-3xl mb-2"></i>
+                <p>No screenshot available for this failure</p>
+                <p className="text-sm mt-1">Screenshots are captured automatically when tests fail</p>
               </div>
             )}
           </div>

@@ -12,6 +12,8 @@ import fs from "fs";
 const upload = multer({ dest: 'uploads/' });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Static file serving for screenshots
+  app.use('/api/screenshots', express.static(path.join(process.cwd(), 'screenshots')));
   // CORS headers for web package integration
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
