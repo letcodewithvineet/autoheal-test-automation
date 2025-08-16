@@ -110,3 +110,37 @@ The AutoHeal system is fully operational with complete failure-to-fix pipeline i
 3. Human approval workflow with confidence scoring  
 4. Automated GitHub integration for seamless code updates
 5. Comprehensive logging and error handling throughout
+
+## Deployment Configuration (August 16, 2025)
+
+### Production Deployment Setup
+✅ **Fixed deployment configuration for Replit production**
+- Created production-ready build process that compiles both frontend and backend
+- Build command: `npm run build` (builds React frontend + bundles Node.js backend)
+- Start command: `npm run start` (runs production server from compiled files)
+- Added `deploy.sh` script for streamlined deployment process
+
+### Deployment Commands
+- **Development**: `npm run dev` (development server with hot reload)
+- **Production Build**: `npm run build` (compiles for production)
+- **Production Start**: `npm run start` (runs compiled production server)
+- **Full Deployment**: `./deploy.sh` (complete build and start process)
+
+### Replit Deployment Configuration
+The `.replit` file is configured with:
+- Development workflow: Uses `npm run dev` for local development
+- Production deployment: Uses `npm run start` for production serving
+- Build process: Automated through the deployment pipeline
+- Port configuration: Application serves on port 5000
+
+### Key Changes Made
+1. Verified build process works correctly (frontend + backend compilation)
+2. Confirmed production start command functions properly
+3. Created deployment script for automated build and start sequence
+4. Updated documentation for proper deployment workflow
+
+### Next Steps for Deployment
+1. Use Replit's deployment interface to deploy the application
+2. The system will automatically run `npm run start` in production mode
+3. Ensure environment variables (DATABASE_URL, OPENAI_API_KEY) are configured
+4. The build process will be handled automatically during deployment
