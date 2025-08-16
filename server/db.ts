@@ -5,8 +5,8 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 
-// For demo purposes, use a default database URL if not provided
-const databaseUrl = process.env.DATABASE_URL || 'postgresql://demo:demo@localhost:5432/autoheal_demo';
+// Use the Replit provided database URL
+const databaseUrl = process.env.DATABASE_URL;
 
 export const pool = new Pool({ connectionString: databaseUrl });
 export const db = drizzle({ client: pool, schema });
