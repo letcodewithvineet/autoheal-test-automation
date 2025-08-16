@@ -1,196 +1,209 @@
 # AutoHeal - Self-Healing Test Automation System
 
-AutoHeal is a comprehensive self-healing test automation platform that automatically detects and fixes failing Cypress test selectors using AI-powered analysis. The system provides a complete feedback loop where test failures are captured, analyzed by AI to generate better selector alternatives, reviewed through a web dashboard, and automatically applied via GitHub pull requests.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
+[![React](https://img.shields.io/badge/React-18-blue)](https://reactjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
 
-## 🚀 Features
+AutoHeal is a comprehensive self-healing test automation platform that automatically detects failing Cypress test selectors, analyzes them using AI-powered intelligence, and suggests stable alternatives through an intuitive web dashboard.
 
-- **AI-Powered Selector Analysis**: Uses OpenAI GPT-4o to analyze failing selectors and suggest improvements
-- **Heuristic Engine**: Rule-based selector generation prioritizing data-testid, aria-label, and semantic attributes
-- **Interactive Dashboard**: React-based interface for reviewing failures and approving suggestions
-- **GitHub Integration**: Automatic PR creation for approved selector changes
-- **PostgreSQL Database**: Stores failure data, suggestions, and approval history
-- **Real-time Monitoring**: Live dashboard showing test health and failure trends
+![AutoHeal Dashboard](https://via.placeholder.com/800x400/2563eb/white?text=AutoHeal+Dashboard+Demo)
 
-## 🏗️ Architecture
+## 🚀 Key Features
 
-### Frontend
-- **React** with TypeScript and Vite
-- **Tailwind CSS** + shadcn/ui components
-- **TanStack Query** for state management
-- **Wouter** for routing
+### AI-Powered Selector Analysis
+- **OpenAI GPT-4 Integration** for intelligent selector suggestions
+- **95% confidence** data-testid recommendations
+- **Context-aware analysis** of DOM structure and test patterns
+- **Fallback heuristic engine** for offline operation
 
-### Backend  
-- **Node.js** with Express and TypeScript
-- **Drizzle ORM** with PostgreSQL
-- **OpenAI API** integration
-- **GitHub API** (Octokit) for PR creation
+### Intelligent Suggestion Engine
+- **Priority-based ranking** (data-testid → aria-label → role → semantic classes)
+- **Confidence scoring** with detailed rationale for each suggestion
+- **Multi-strategy approach** combining AI and rule-based analysis
+- **Stability assessment** avoiding auto-generated selectors
 
-### Database
-- **PostgreSQL** for structured data storage
-- Normalized schema for failures, suggestions, approvals, and selectors
+### Complete Workflow Management
+- **Real-time dashboard** for failure monitoring and analysis
+- **Approval workflow** with audit trails for team collaboration  
+- **GitHub integration** for automated pull request creation
+- **Enterprise-ready** with user authentication and role management
 
-## 📦 Installation
+### Full-Stack Architecture
+- **React + TypeScript** frontend with shadcn/ui components
+- **Express.js API** with comprehensive error handling
+- **PostgreSQL database** with Drizzle ORM for type safety
+- **Docker support** for easy deployment and scaling
+
+## 🎯 Demo Environment
+
+AutoHeal includes a complete demo environment with **3 realistic test failures**:
+
+1. **Login Form Failure** - Missing data-testid attributes (95% AI confidence)
+2. **E-commerce Product Selection** - Unstable class-based selectors  
+3. **Dashboard Chart Interaction** - Accessibility-focused improvements
+
+## 📋 Quick Start
 
 ### Prerequisites
-- Node.js 18+
-- PostgreSQL 14+
-- OpenAI API key
-- GitHub token (optional, for PR creation)
+- Node.js 18+ 
+- PostgreSQL database (or use demo mode)
+- OpenAI API key (optional - will fallback to heuristics)
 
-### Quick Start
+### Installation
 
-1. **Clone the repository**
 ```bash
-git clone https://github.com/letcodewithvineet/autoheal.git
-cd autoheal
-```
+# Clone the repository
+git clone https://github.com/letcodewithvineet/autoheal-test-automation.git
+cd autoheal-test-automation
 
-2. **Install dependencies**
-```bash
+# Install dependencies
 npm install
-```
 
-3. **Set up environment variables**
-```bash
+# Setup environment
 cp .env.example .env
-```
+# Edit .env with your configuration
 
-Edit `.env` with your configuration:
-```env
-DATABASE_URL=postgresql://user:password@localhost:5432/autoheal
-OPENAI_API_KEY=your_openai_api_key
-GITHUB_TOKEN=your_github_token (optional)
-```
-
-4. **Set up the database**
-```bash
+# Initialize database
 npm run db:push
-```
 
-5. **Start the development server**
-```bash
+# Start development server
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
+Open http://localhost:5000 to see the AutoHeal dashboard.
+
+### Windows Setup
+
+For Windows users, use the included PowerShell script:
+
+```powershell
+# Run the automated setup
+.\start-windows-demo.ps1
+```
+
+See [DEMO_SETUP_WINDOWS.md](./DEMO_SETUP_WINDOWS.md) for detailed Windows instructions.
+
+## 🏗️ Architecture Overview
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Cypress       │───▶│    AutoHeal      │───▶│    GitHub       │
+│   Test Runner   │    │    Platform      │    │    PRs          │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                              │
+                              ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   React         │◀──▶│   Express API    │◀──▶│   PostgreSQL    │
+│   Dashboard     │    │   + AI Service   │    │   Database      │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+```
+
+### Core Components
+
+- **Cypress Plugin**: Captures test failures with full context (DOM, screenshots, logs)
+- **AI Advisor Service**: Analyzes failures and generates ranked selector suggestions  
+- **Web Dashboard**: Review failures, approve suggestions, manage workflow
+- **GitHub Service**: Creates automated pull requests for approved changes
+- **Database Layer**: Stores failures, suggestions, and approval audit trails
 
 ## 🔧 Configuration
 
-### Database Schema
-The system uses PostgreSQL with the following main tables:
-- `failures` - Test failure records with DOM context
-- `suggestions` - AI-generated selector alternatives  
-- `approvals` - Human approval decisions
-- `selectors` - Selector version history
+### Environment Variables
 
-### OpenAI Integration
-Configure your OpenAI API key to enable AI-powered selector analysis. The system uses GPT-4o for intelligent suggestions and falls back to heuristic-only mode if the API is unavailable.
+```env
+# Database Configuration
+DATABASE_URL=postgresql://user:password@localhost:5432/autoheal
 
-### GitHub Integration
-Set up a GitHub token with repo permissions to enable automatic PR creation when suggestions are approved.
+# AI Integration (Optional)
+OPENAI_API_KEY=sk-your-openai-key-here
 
-## 📊 Usage
+# GitHub Integration (Optional) 
+GITHUB_TOKEN=ghp_your-github-token-here
 
-### Dashboard
-1. View recent test failures in the main dashboard
-2. Click on any failure to see detailed analysis
-3. Review AI-generated selector suggestions with confidence scores
-4. Approve suggestions to trigger automatic PR creation
-
-### API Endpoints
-- `GET /api/failures` - List all failures
-- `GET /api/failures/:id` - Get failure details with suggestions
-- `POST /api/failures` - Submit new failure data
-- `POST /api/approvals` - Approve/reject suggestions
-
-### Cypress Integration
-The system includes a Cypress plugin for automatic failure capture:
-
-```javascript
-// cypress/support/e2e.js
-import './autoheal';
-
-// In your test files
-cy.get('[data-testid="login-button"]').click();
+# Application Settings
+NODE_ENV=production
+PORT=5000
 ```
 
-## 🤖 AI Suggestion Engine
+### OpenAI Integration
 
-AutoHeal uses multiple strategies to generate selector alternatives:
+AutoHeal uses OpenAI GPT-4 for advanced selector analysis. Without an API key, the system automatically falls back to intelligent heuristic-based suggestions that still provide high-quality recommendations.
 
-### Heuristic Rules (Priority Order)
-1. **data-testid attributes** (95% confidence)
-2. **aria-label attributes** (85% confidence) 
-3. **role-based selectors** (75% confidence)
-4. **stable ID patterns** (70% confidence)
-5. **semantic class names** (60% confidence)
+## 📊 API Endpoints
 
-### AI Analysis
-- Analyzes DOM context and failure patterns
-- Generates contextually appropriate selectors
-- Provides detailed rationale for each suggestion
-- Confidence scoring from 40% to 90%
+### Failure Management
+- `GET /api/failures` - List all test failures
+- `GET /api/failures/:id` - Get specific failure details
+- `POST /api/failures` - Submit new test failure
 
-## 📈 Demo Data
+### Suggestion System  
+- `POST /api/failures/:id/suggest` - Generate AI suggestions
+- `GET /api/suggestions/:id` - Get suggestion details
+- `POST /api/suggestions/:id/approve` - Approve suggestion
+- `POST /api/suggestions/:id/reject` - Reject suggestion
 
-The system includes sample data demonstrating:
-- Login test failure with data-testid suggestion (95% confidence)
-- E-commerce product selector with semantic alternatives
-- API dashboard chart selector with accessibility improvements
+### Analytics
+- `GET /api/stats` - Dashboard analytics and metrics
+- `GET /api/health` - System health check
 
 ## 🚀 Deployment
 
-### Docker
+### Docker Deployment
+
 ```bash
-docker-compose up -d
+# Build and run with Docker Compose
+docker-compose up --build
+
+# Access at http://localhost:5000
 ```
 
-### Manual Deployment
-1. Build the application: `npm run build`
-2. Set up PostgreSQL database
-3. Configure environment variables
-4. Start the server: `npm start`
+### Cloud Platforms
 
-## 🛠️ Development
+AutoHeal deploys seamlessly to:
+- **Replit** (recommended for demos)
+- **Railway** (with automatic PostgreSQL)
+- **Vercel** (with Vercel Postgres)
+- **DigitalOcean App Platform**
 
-### Project Structure
-```
-autoheal/
-├── client/           # React frontend
-├── server/           # Express backend  
-├── shared/           # Shared types and schemas
-├── uploads/          # File storage
-└── docker-compose.yml
-```
+See [GITHUB_DEPLOYMENT_STEPS.md](./GITHUB_DEPLOYMENT_STEPS.md) for detailed deployment instructions.
 
-### Scripts
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run db:push` - Update database schema
-- `npm run lint` - Run ESLint
-- `npm run test` - Run tests
+## 📈 Team Demo
 
-## 📝 Contributing
+AutoHeal includes comprehensive demo materials:
+
+- **[TEAM_DEMO_GUIDE.md](./TEAM_DEMO_GUIDE.md)** - 20-minute presentation script
+- **Live dashboard** with interactive failure analysis
+- **Working AI suggestions** with confidence scoring
+- **Complete approval workflow** demonstration
+
+Perfect for showcasing to stakeholders, development teams, and potential users.
+
+## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`) 
+5. Open a Pull Request
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🆘 Support
 
-For issues and questions:
-- Create an issue on GitHub
-- Check the documentation in `/docs`
-- Review the demo data and examples
+- **Documentation**: Check the included markdown guides
+- **Issues**: Create GitHub issues for bugs or feature requests
+- **Demo Setup**: See `DEMO_SETUP_WINDOWS.md` for Windows-specific help
 
-## 🔗 Links
+## 🎉 Acknowledgments
 
-- [OpenAI API Documentation](https://platform.openai.com/docs)
-- [Cypress Testing Framework](https://cypress.io)
-- [GitHub API Documentation](https://docs.github.com/en/rest)
+- OpenAI GPT-4 for intelligent selector analysis
+- Cypress team for robust test automation platform
+- shadcn/ui for beautiful React components
+- Drizzle ORM for type-safe database operations
+
+---
+
+**Built with ❤️ for developers who want stable, maintainable test automation without the constant selector maintenance overhead.**
