@@ -29,9 +29,12 @@ interface Failure {
 
 export default function FailureList({ filters, onFailureSelect, selectedFailureId }: FailureListProps) {
   const { data: failures, isLoading, error } = useQuery<Failure[]>({
-    queryKey: ['/api', 'failures'],
+    queryKey: ['/api/failures'],
     enabled: true,
   });
+
+  // Debug logging
+  console.log('FailureList render:', { failures, isLoading, error });
 
   if (isLoading) {
     return (
