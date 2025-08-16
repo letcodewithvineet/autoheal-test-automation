@@ -35,6 +35,10 @@ export default function FailureList({ filters, onFailureSelect, selectedFailureI
 
   // Debug logging
   console.log('FailureList render:', { failures, isLoading, error });
+  
+  if (error) {
+    console.error('Query error details:', error);
+  }
 
   if (isLoading) {
     return (
@@ -61,6 +65,7 @@ export default function FailureList({ filters, onFailureSelect, selectedFailureI
           <div className="text-center text-red-600">
             <i className="fas fa-exclamation-triangle text-2xl mb-2"></i>
             <p>Failed to load failures</p>
+            <p className="text-sm mt-2 text-gray-600">Error: {error instanceof Error ? error.message : 'Unknown error'}</p>
           </div>
         </CardContent>
       </Card>
