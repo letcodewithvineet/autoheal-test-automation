@@ -7,7 +7,7 @@
 
 AutoHeal is a comprehensive self-healing test automation platform that automatically detects failing Cypress test selectors, analyzes them using AI-powered intelligence, and suggests stable alternatives through an intuitive web dashboard.
 
-![AutoHeal Dashboard](https://autoheal-test-automation-pandeyvineetpro.replit.app/800x400/2563eb/white?text=AutoHeal+Dashboard+Demo)
+![AutoHeal Dashboard](https://autoheal-test-automation-pandeyvineetpro.replit.app/800x400/2563eb/white?text=AutoHeal+Dashboard)
 
 ## 🚀 Key Features
 
