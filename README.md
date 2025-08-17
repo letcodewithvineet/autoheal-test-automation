@@ -7,29 +7,33 @@
 
 AutoHeal is a comprehensive self-healing test automation platform that automatically detects failing Cypress test selectors, analyzes them using AI-powered intelligence, and suggests stable alternatives through an intuitive web dashboard.
 
-![AutoHeal Dashboard](https://via.placeholder.com/800x400/2563eb/white?text=AutoHeal+Dashboard+Demo)
+![AutoHeal Dashboard](https://autoheal-test-automation-pandeyvineetpro.replit.app/800x400/2563eb/white?text=AutoHeal+Dashboard+Demo)
 
 ## 🚀 Key Features
 
 ### AI-Powered Selector Analysis
+
 - **OpenAI GPT-4 Integration** for intelligent selector suggestions
 - **95% confidence** data-testid recommendations
 - **Context-aware analysis** of DOM structure and test patterns
 - **Fallback heuristic engine** for offline operation
 
 ### Intelligent Suggestion Engine
+
 - **Priority-based ranking** (data-testid → aria-label → role → semantic classes)
 - **Confidence scoring** with detailed rationale for each suggestion
 - **Multi-strategy approach** combining AI and rule-based analysis
 - **Stability assessment** avoiding auto-generated selectors
 
 ### Complete Workflow Management
+
 - **Real-time dashboard** for failure monitoring and analysis
-- **Approval workflow** with audit trails for team collaboration  
+- **Approval workflow** with audit trails for team collaboration
 - **GitHub integration** for automated pull request creation
 - **Enterprise-ready** with user authentication and role management
 
 ### Full-Stack Architecture
+
 - **React + TypeScript** frontend with shadcn/ui components
 - **Express.js API** with comprehensive error handling
 - **PostgreSQL database** with Drizzle ORM for type safety
@@ -40,13 +44,14 @@ AutoHeal is a comprehensive self-healing test automation platform that automatic
 AutoHeal includes a complete demo environment with **3 realistic test failures**:
 
 1. **Login Form Failure** - Missing data-testid attributes (95% AI confidence)
-2. **E-commerce Product Selection** - Unstable class-based selectors  
+2. **E-commerce Product Selection** - Unstable class-based selectors
 3. **Dashboard Chart Interaction** - Accessibility-focused improvements
 
 ## 📋 Quick Start
 
 ### Prerequisites
-- Node.js 18+ 
+
+- Node.js 18+
 - PostgreSQL database (or use demo mode)
 - OpenAI API key (optional - will fallback to heuristics)
 
@@ -102,7 +107,7 @@ See [DEMO_SETUP_WINDOWS.md](./DEMO_SETUP_WINDOWS.md) for detailed Windows instru
 ### Core Components
 
 - **Cypress Plugin**: Captures test failures with full context (DOM, screenshots, logs)
-- **AI Advisor Service**: Analyzes failures and generates ranked selector suggestions  
+- **AI Advisor Service**: Analyzes failures and generates ranked selector suggestions
 - **Web Dashboard**: Review failures, approve suggestions, manage workflow
 - **GitHub Service**: Creates automated pull requests for approved changes
 - **Database Layer**: Stores failures, suggestions, and approval audit trails
@@ -118,7 +123,7 @@ DATABASE_URL=postgresql://user:password@localhost:5432/autoheal
 # AI Integration (Optional)
 OPENAI_API_KEY=sk-your-openai-key-here
 
-# GitHub Integration (Optional) 
+# GitHub Integration (Optional)
 GITHUB_TOKEN=ghp_your-github-token-here
 
 # Application Settings
@@ -133,17 +138,20 @@ AutoHeal uses OpenAI GPT-4 for advanced selector analysis. Without an API key, t
 ## 📊 API Endpoints
 
 ### Failure Management
+
 - `GET /api/failures` - List all test failures
 - `GET /api/failures/:id` - Get specific failure details
 - `POST /api/failures` - Submit new test failure
 
-### Suggestion System  
+### Suggestion System
+
 - `POST /api/failures/:id/suggest` - Generate AI suggestions
 - `GET /api/suggestions/:id` - Get suggestion details
 - `POST /api/suggestions/:id/approve` - Approve suggestion
 - `POST /api/suggestions/:id/reject` - Reject suggestion
 
 ### Analytics
+
 - `GET /api/stats` - Dashboard analytics and metrics
 - `GET /api/health` - System health check
 
@@ -161,6 +169,7 @@ docker-compose up --build
 ### Cloud Platforms
 
 AutoHeal deploys seamlessly to:
+
 - **Replit** (recommended for demos)
 - **Railway** (with automatic PostgreSQL)
 - **Vercel** (with Vercel Postgres)
@@ -184,7 +193,7 @@ Perfect for showcasing to stakeholders, development teams, and potential users.
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`) 
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
 ## 📄 License
