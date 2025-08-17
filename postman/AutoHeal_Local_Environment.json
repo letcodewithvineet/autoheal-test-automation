@@ -1,0 +1,49 @@
+{
+  "id": "autoheal-local-dev",
+  "name": "AutoHeal Local Development",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "description": "Base URL for the AutoHeal API server",
+      "enabled": true
+    },
+    {
+      "key": "failure_id",
+      "value": "1007",
+      "description": "Sample failure ID for testing existing data",
+      "enabled": true
+    },
+    {
+      "key": "suggestion_id",
+      "value": "",
+      "description": "Suggestion ID (automatically populated from API responses)",
+      "enabled": true
+    },
+    {
+      "key": "repo_name",
+      "value": "acme-corp/web-app",
+      "description": "Sample repository name for filtering",
+      "enabled": true
+    },
+    {
+      "key": "test_run_id",
+      "value": "run-001",
+      "description": "Sample test run ID",
+      "enabled": true
+    },
+    {
+      "key": "approver_email",
+      "value": "developer@company.com",
+      "description": "Email address for approval tracking",
+      "enabled": true
+    },
+    {
+      "key": "timestamp",
+      "value": "2025-08-17T00:00:00Z",
+      "description": "Dynamic timestamp for testing (updated by scripts)",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

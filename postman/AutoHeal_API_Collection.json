@@ -1,0 +1,442 @@
+{
+  "info": {
+    "name": "AutoHeal Test Automation API",
+    "description": "Complete API collection for testing AutoHeal's self-healing test automation system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000",
+      "description": "Base URL for the AutoHeal API"
+    },
+    {
+      "key": "failure_id",
+      "value": "1007",
+      "description": "Sample failure ID for testing"
+    },
+    {
+      "key": "suggestion_id",
+      "value": "",
+      "description": "Suggestion ID (populated from responses)"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "Health Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            },
+            "description": "Check if the API server is running and healthy"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Failures",
+      "item": [
+        {
+          "name": "Get All Failures",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/failures",
+              "host": ["{{base_url}}"],
+              "path": ["api", "failures"]
+            },
+            "description": "Retrieve all test failures with suggestion counts"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Failures with Filters",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/failures?repo=acme-corp/web-app&status=new&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "failures"],
+              "query": [
+                {
+                  "key": "repo",
+                  "value": "acme-corp/web-app",
+                  "description": "Filter by repository"
+                },
+                {
+                  "key": "status",
+                  "value": "new",
+                  "description": "Filter by status (new, approved, rejected)"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Limit number of results"
+                },
+                {
+                  "key": "since",
+                  "value": "2025-08-01T00:00:00Z",
+                  "description": "Filter by date (ISO format)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get failures with optional filters for repo, status, and date"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Specific Failure",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/failures/{{failure_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "failures", "{{failure_id}}"]
+            },
+            "description": "Get detailed information about a specific failure including suggestions"
+          },
+          "response": []
+        },
+        {
+          "name": "Report New Failure",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"errorMessage\": \"AssertionError: Timed out retrying after 4000ms: Expected to find element: .new-button, but never found it.\",\n  \"runId\": \"test-run-001\",\n  \"repo\": \"my-app/frontend\",\n  \"branch\": \"feature/new-ui\",\n  \"commit\": \"def456\",\n  \"suite\": \"Button Tests\",\n  \"test\": \"should click new button\",\n  \"specPath\": \"cypress/e2e/buttons.cy.ts\",\n  \"browser\": \"chrome\",\n  \"viewport\": \"1280x720\",\n  \"domHtml\": \"<div class='container'><button class='submit-button' type='button'>Submit</button></div>\",\n  \"consoleLogs\": [{\"level\": \"error\", \"message\": \"Element not found: .new-button\"}],\n  \"networkLogs\": [{\"url\": \"/api/submit\", \"status\": 200, \"method\": \"POST\"}],\n  \"currentSelector\": \".new-button\",\n  \"selectorContext\": {\n    \"element\": \"button\",\n    \"text\": \"Submit\",\n    \"attributes\": {\n      \"class\": \"submit-button\",\n      \"type\": \"button\"\n    },\n    \"parent\": \"div.container\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/failures",
+              "host": ["{{base_url}}"],
+              "path": ["api", "failures"]
+            },
+            "description": "Submit a new test failure for AI analysis and suggestion generation"
+          },
+          "response": []
+        },
+        {
+          "name": "Report Failure with Screenshot",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "errorMessage",
+                  "value": "AssertionError: Element not found: .login-btn",
+                  "type": "text"
+                },
+                {
+                  "key": "runId",
+                  "value": "run-with-screenshot",
+                  "type": "text"
+                },
+                {
+                  "key": "repo",
+                  "value": "test-repo/app",
+                  "type": "text"
+                },
+                {
+                  "key": "branch",
+                  "value": "main",
+                  "type": "text"
+                },
+                {
+                  "key": "commit",
+                  "value": "abc123",
+                  "type": "text"
+                },
+                {
+                  "key": "suite",
+                  "value": "Login Tests",
+                  "type": "text"
+                },
+                {
+                  "key": "test",
+                  "value": "should login successfully",
+                  "type": "text"
+                },
+                {
+                  "key": "specPath",
+                  "value": "cypress/e2e/login.cy.ts",
+                  "type": "text"
+                },
+                {
+                  "key": "browser",
+                  "value": "chrome",
+                  "type": "text"
+                },
+                {
+                  "key": "viewport",
+                  "value": "1280x720",
+                  "type": "text"
+                },
+                {
+                  "key": "currentSelector",
+                  "value": ".login-btn",
+                  "type": "text"
+                },
+                {
+                  "key": "screenshot",
+                  "description": "Upload a screenshot file (PNG/JPEG)",
+                  "type": "file"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/failures",
+              "host": ["{{base_url}}"],
+              "path": ["api", "failures"]
+            },
+            "description": "Submit a failure report with an optional screenshot attachment"
+          },
+          "response": []
+        },
+        {
+          "name": "Regenerate Suggestions",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/failures/{{failure_id}}/suggest",
+              "host": ["{{base_url}}"],
+              "path": ["api", "failures", "{{failure_id}}", "suggest"]
+            },
+            "description": "Regenerate AI suggestions for a specific failure"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Suggestions",
+      "item": [
+        {
+          "name": "Get Suggestions for Failure",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/suggestions/{{failure_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "suggestions", "{{failure_id}}"]
+            },
+            "description": "Get all AI-generated suggestions for a specific failure"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Approvals",
+      "item": [
+        {
+          "name": "Approve Suggestion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"suggestionId\": \"{{suggestion_id}}\",\n  \"decision\": \"approve\",\n  \"notes\": \"This selector looks more reliable and follows data-testid best practices\",\n  \"approvedBy\": \"developer@company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/approvals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "approvals"]
+            },
+            "description": "Approve a suggestion and trigger automatic PR creation"
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Suggestion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"suggestionId\": \"{{suggestion_id}}\",\n  \"decision\": \"reject\",\n  \"notes\": \"This selector is too generic and might break other tests\",\n  \"approvedBy\": \"developer@company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/approvals",
+              "host": ["{{base_url}}"],
+              "path": ["api", "approvals"]
+            },
+            "description": "Reject a suggestion with optional feedback notes"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Approvals for Suggestion",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/approvals/suggestion/{{suggestion_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "approvals", "suggestion", "{{suggestion_id}}"]
+            },
+            "description": "Get approval history for a specific suggestion"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Selectors",
+      "item": [
+        {
+          "name": "Get All Selectors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/selectors",
+              "host": ["{{base_url}}"],
+              "path": ["api", "selectors"]
+            },
+            "description": "Get the complete selector map for all pages"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Selectors for Page",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/selectors/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "selectors", "login"]
+            },
+            "description": "Get selectors for a specific page"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Selector",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"selector\": \"[data-testid='login-button']\",\n  \"commit\": \"abc123def\",\n  \"approvedBy\": \"developer@company.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/selectors/login/submitButton",
+              "host": ["{{base_url}}"],
+              "path": ["api", "selectors", "login", "submitButton"]
+            },
+            "description": "Update a specific selector with approval tracking"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Git Integration",
+      "item": [
+        {
+          "name": "Retry PR Creation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/git/pr/{{suggestion_id}}/retry",
+              "host": ["{{base_url}}"],
+              "path": ["api", "git", "pr", "{{suggestion_id}}", "retry"]
+            },
+            "description": "Retry creating a pull request for an approved suggestion"
+          },
+          "response": []
+        },
+        {
+          "name": "Get PR Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/git/pr/{{suggestion_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "git", "pr", "{{suggestion_id}}", "status"]
+            },
+            "description": "Get the status of a pull request for a suggestion"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Screenshots",
+      "item": [
+        {
+          "name": "Get Screenshot",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/screenshots/login-failure.svg",
+              "host": ["{{base_url}}"],
+              "path": ["api", "screenshots", "login-failure.svg"]
+            },
+            "description": "Download a screenshot file by filename"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
