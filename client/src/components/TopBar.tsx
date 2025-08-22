@@ -6,6 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuth, useLogout } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { LogOut, User } from "lucide-react";
 
 interface TopBarProps {
   filters: {
@@ -16,6 +19,10 @@ interface TopBarProps {
 }
 
 export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
+  const { user } = useAuth();
+  const logout = useLogout();
+  const { toast } = useToast();
+
   const handleRepoChange = (value: string) => {
     onFiltersChange({ ...filters, repo: value });
   };
@@ -29,11 +36,27 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
     console.log('Refreshing data...');
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout.mutateAsync();
+      toast({
+        title: "Success",
+        description: "Logged out successfully",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Logout failed",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <header className="bg-white border-b border-slate-200 px-6 py-4" data-testid="topbar">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800" data-testid="page-title">Test Failures</h2>
+          <h2 className="text-2xl font-bold text-slate-800" data-testid="page-title">AutoHeal Dashboard</h2>
           <p className="text-slate-600 mt-1">Monitor and resolve failing test cases</p>
         </div>
         <div className="flex items-center space-x-4">
@@ -72,6 +95,26 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
             <i className="fas fa-sync-alt mr-2"></i>
             Refresh
           </Button>
+
+          {/* User Info and Logout */}
+          <div className="flex items-center space-x-3 border-l border-slate-200 pl-4">
+            <div className="flex items-center space-x-2 text-sm text-slate-600">
+              <User className="h-4 w-4" />
+              <span data-testid="text-username">{user?.username}</span>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              disabled={logout.isPending}
+              data-testid="button-logout"
+              className="flex items-center space-x-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Logout</span>
+            </Button>
+          </div>
         </div>
       </div>
     </header>

@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import LoginForm from "@/components/LoginForm";
-import AppHeader from "@/components/AppHeader";
+import AppHeader from "./components/AppHeader";
 
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -29,14 +29,11 @@ function Router() {
 
   return (
     <div className="min-h-screen bg-background">
-      <AppHeader />
-      <main className="container mx-auto py-6">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route component={NotFound} />
-        </Switch>
-      </main>
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/dashboard" component={Dashboard} />
+        <Route component={NotFound} />
+      </Switch>
     </div>
   );
 }

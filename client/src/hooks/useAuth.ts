@@ -19,6 +19,22 @@ interface LoginData {
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
+    queryFn: async () => {
+      const response = await fetch("/api/auth/me", {
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return null;
+        }
+        const error = await response.json();
+        throw new Error(error.message || "Failed to get user");
+      }
+
+      const data = await response.json();
+      return data.user;
+    },
     retry: false,
   });
 
@@ -35,10 +51,21 @@ export function useLogin() {
   
   return useMutation({
     mutationFn: async (data: LoginData): Promise<AuthResponse> => {
-      return apiRequest("/api/auth/login", {
+      const response = await fetch("/api/auth/login", {
         method: "POST",
-        body: data,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Login failed");
+      }
+
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/me"], data.user);
@@ -52,10 +79,21 @@ export function useRegister() {
   
   return useMutation({
     mutationFn: async (data: LoginData): Promise<AuthResponse> => {
-      return apiRequest("/api/auth/register", {
+      const response = await fetch("/api/auth/register", {
         method: "POST",
-        body: data,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+        credentials: "include",
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Registration failed");
+      }
+
+      return response.json();
     },
     onSuccess: (data) => {
       queryClient.setQueryData(["/api/auth/me"], data.user);
@@ -69,9 +107,17 @@ export function useLogout() {
   
   return useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/auth/logout", {
+      const response = await fetch("/api/auth/logout", {
         method: "POST",
+        credentials: "include",
       });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Logout failed");
+      }
+
+      return response.json();
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/me"], null);
