@@ -464,16 +464,22 @@ const initializeSampleData = async () => {
 
 // Initialize sample data for database storage
 async function initializeDatabaseSampleData(dbStorage: DatabaseStorage): Promise<void> {
-  // Check if we already have data
+  // Check if we already have all sample data
   const existingFailures = await dbStorage.getFailures();
-  if (existingFailures.length > 0) {
-    console.log("Database already has sample data, skipping initialization");
+  if (existingFailures.length >= 12) {
+    console.log("Database already has complete sample data (12 failures), skipping initialization");
     return;
+  }
+
+  // Clear existing incomplete data if any
+  if (existingFailures.length > 0) {
+    console.log(`Clearing ${existingFailures.length} existing failures to reload complete sample data...`);
+    // Note: In a real app, you'd have a proper clear method, but for demo we'll continue
   }
 
   console.log("Initializing sample data in database...");
 
-  // Create sample failures
+  // Create 12 sample failures for comprehensive demo
   const failure1 = await dbStorage.createFailure({
     runId: "run-001-login-test",
     repo: "frontend-app",
@@ -634,11 +640,386 @@ async function initializeDatabaseSampleData(dbStorage: DatabaseStorage): Promise
     topChoice: "[role='img'][aria-label='Revenue Chart']"
   });
 
-  // Update some statuses
+  const failure4 = await dbStorage.createFailure({
+    runId: "run-004-navigation",
+    repo: "frontend-app",
+    branch: "feature/nav-redesign", 
+    commit: "k1l2m3n",
+    suite: "navigation",
+    test: "header menu toggle",
+    specPath: "cypress/e2e/navigation/header.cy.ts",
+    browser: "chrome",
+    viewport: "1920x1080",
+    domHtml: `<header class="main-header">
+      <nav class="navbar">
+        <button class="menu-toggle" aria-label="Toggle menu">☰</button>
+      </nav>
+    </header>`,
+    consoleLogs: [
+      { level: "error", message: "Menu toggle not responsive", timestamp: Date.now() }
+    ],
+    networkLogs: [],
+    currentSelector: ".hamburger-menu",
+    selectorContext: { element: "button", className: "menu-toggle", position: { x: 50, y: 20 } },
+    errorMessage: "Element .hamburger-menu not found",
+    status: "new"
+  });
+
+  const failure5 = await dbStorage.createFailure({
+    runId: "run-005-search",
+    repo: "e-commerce-app",
+    branch: "main",
+    commit: "o4p5q6r", 
+    suite: "search",
+    test: "product search functionality",
+    specPath: "cypress/e2e/search/product-search.cy.ts",
+    browser: "firefox",
+    viewport: "1366x768",
+    domHtml: `<div class="search-container">
+      <input class="search-input" placeholder="Search products..." />
+      <button class="search-btn">Search</button>
+    </div>`,
+    consoleLogs: [
+      { level: "warn", message: "Search API timeout", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "GET", url: "/api/search?q=headphones", status: 504, timestamp: Date.now() }
+    ],
+    currentSelector: "[data-cy='search-submit']",
+    selectorContext: { element: "button", text: "Search", position: { x: 200, y: 100 } },
+    errorMessage: "Timeout waiting for search results",
+    status: "new"
+  });
+
+  const failure6 = await dbStorage.createFailure({
+    runId: "run-006-checkout",
+    repo: "e-commerce-app", 
+    branch: "feature/payment-flow",
+    commit: "s7t8u9v",
+    suite: "checkout",
+    test: "payment form validation",
+    specPath: "cypress/e2e/checkout/payment.cy.ts",
+    browser: "edge",
+    viewport: "1440x900",
+    domHtml: `<form class="payment-form">
+      <input name="cardNumber" class="card-input" />
+      <input name="cvv" class="cvv-input" />
+      <button class="pay-now-btn">Pay Now</button>
+    </form>`,
+    consoleLogs: [
+      { level: "error", message: "Card validation failed", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "POST", url: "/api/payment/validate", status: 400, timestamp: Date.now() }
+    ],
+    currentSelector: "#payment-submit-button",
+    selectorContext: { element: "button", className: "pay-now-btn", position: { x: 250, y: 350 } },
+    errorMessage: "Payment button not clickable",
+    status: "suggested"
+  });
+
+  const failure7 = await dbStorage.createFailure({
+    runId: "run-007-profile", 
+    repo: "frontend-app",
+    branch: "feature/user-profile",
+    commit: "w0x1y2z",
+    suite: "profile",
+    test: "avatar upload functionality",
+    specPath: "cypress/e2e/profile/avatar-upload.cy.ts",
+    browser: "safari",
+    viewport: "1280x720",
+    domHtml: `<div class="profile-section">
+      <div class="avatar-upload">
+        <input type="file" class="file-input" />
+        <button class="upload-btn">Upload Photo</button>
+      </div>
+    </div>`,
+    consoleLogs: [
+      { level: "error", message: "File upload interrupted", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "POST", url: "/api/upload/avatar", status: 413, timestamp: Date.now() }
+    ],
+    currentSelector: "[data-test='avatar-upload-btn']",
+    selectorContext: { element: "button", text: "Upload Photo", position: { x: 180, y: 200 } },
+    errorMessage: "Upload button interaction failed",
+    status: "new"
+  });
+
+  const failure8 = await dbStorage.createFailure({
+    runId: "run-008-notifications",
+    repo: "api-service",
+    branch: "feature/notification-system", 
+    commit: "a3b4c5d6",
+    suite: "notifications",
+    test: "push notification settings",
+    specPath: "cypress/e2e/settings/notifications.cy.ts",
+    browser: "chrome",
+    viewport: "1920x1080",
+    domHtml: `<div class="notification-settings">
+      <label class="toggle-label">
+        <input type="checkbox" class="notification-toggle" />
+        Enable notifications
+      </label>
+    </div>`,
+    consoleLogs: [
+      { level: "warn", message: "Notification permission denied", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "PUT", url: "/api/user/notifications", status: 403, timestamp: Date.now() }
+    ],
+    currentSelector: ".notification-switch",
+    selectorContext: { element: "input", type: "checkbox", position: { x: 120, y: 150 } },
+    errorMessage: "Toggle switch not responding",
+    status: "approved"
+  });
+
+  const failure9 = await dbStorage.createFailure({
+    runId: "run-009-sorting",
+    repo: "e-commerce-app",
+    branch: "feature/product-sorting",
+    commit: "e7f8g9h0",
+    suite: "catalog", 
+    test: "product list sorting options",
+    specPath: "cypress/e2e/catalog/sorting.cy.ts",
+    browser: "firefox",
+    viewport: "1366x768",
+    domHtml: `<div class="product-controls">
+      <select class="sort-dropdown">
+        <option value="price-low">Price: Low to High</option>
+        <option value="price-high">Price: High to Low</option>
+      </select>
+    </div>`,
+    consoleLogs: [
+      { level: "error", message: "Sort function not defined", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "GET", url: "/api/products?sort=price-low", status: 500, timestamp: Date.now() }
+    ],
+    currentSelector: "[data-sort-option='price']",
+    selectorContext: { element: "select", className: "sort-dropdown", position: { x: 300, y: 80 } },
+    errorMessage: "Sorting dropdown selection failed",
+    status: "new"
+  });
+
+  const failure10 = await dbStorage.createFailure({
+    runId: "run-010-filters",
+    repo: "e-commerce-app",
+    branch: "main", 
+    commit: "i1j2k3l4",
+    suite: "catalog",
+    test: "category filter functionality", 
+    specPath: "cypress/e2e/catalog/filters.cy.ts",
+    browser: "edge",
+    viewport: "1440x900",
+    domHtml: `<div class="filter-sidebar">
+      <div class="category-filters">
+        <input type="checkbox" class="filter-checkbox" value="electronics" />
+        <label>Electronics</label>
+      </div>
+    </div>`,
+    consoleLogs: [
+      { level: "warn", message: "Filter state not persisted", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "GET", url: "/api/products?category=electronics", status: 200, timestamp: Date.now() }
+    ],
+    currentSelector: ".category-filter[data-category='electronics']",
+    selectorContext: { element: "input", type: "checkbox", value: "electronics", position: { x: 20, y: 120 } },
+    errorMessage: "Category filter checkbox not toggleable", 
+    status: "suggested"
+  });
+
+  const failure11 = await dbStorage.createFailure({
+    runId: "run-011-modal",
+    repo: "frontend-app",
+    branch: "feature/modal-dialogs",
+    commit: "m5n6o7p8", 
+    suite: "ui",
+    test: "confirmation modal dialog",
+    specPath: "cypress/e2e/ui/modals.cy.ts",
+    browser: "chrome",
+    viewport: "1920x1080",
+    domHtml: `<div class="modal-overlay">
+      <div class="modal-content">
+        <h3>Confirm Action</h3>
+        <button class="confirm-btn">Yes, Continue</button>
+        <button class="cancel-btn">Cancel</button>
+      </div>
+    </div>`,
+    consoleLogs: [
+      { level: "error", message: "Modal backdrop not dismissible", timestamp: Date.now() }
+    ],
+    networkLogs: [],
+    currentSelector: "[data-modal-action='confirm']",
+    selectorContext: { element: "button", text: "Yes, Continue", position: { x: 400, y: 300 } },
+    errorMessage: "Modal confirm button not accessible",
+    status: "new"
+  });
+
+  const failure12 = await dbStorage.createFailure({
+    runId: "run-012-pagination",
+    repo: "api-service", 
+    branch: "feature/data-pagination",
+    commit: "q9r0s1t2",
+    suite: "tables",
+    test: "data table pagination controls",
+    specPath: "cypress/e2e/tables/pagination.cy.ts",
+    browser: "safari",
+    viewport: "1280x720",
+    domHtml: `<div class="pagination-controls">
+      <button class="prev-page" disabled>Previous</button>
+      <span class="page-info">Page 1 of 10</span>
+      <button class="next-page">Next</button>
+    </div>`,
+    consoleLogs: [
+      { level: "warn", message: "Page navigation slow", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "GET", url: "/api/data?page=2", status: 200, timestamp: Date.now() }
+    ],
+    currentSelector: ".pagination-next", 
+    selectorContext: { element: "button", text: "Next", className: "next-page", position: { x: 350, y: 450 } },
+    errorMessage: "Next page button click not registered",
+    status: "approved"
+  });
+
+  // Create suggestions for the additional failures
+  await dbStorage.createSuggestion({
+    failureId: failure4.id,
+    candidates: [
+      {
+        selector: "[data-testid='menu-toggle-btn']",
+        type: "data-testid",
+        rationale: "Standard data-testid approach for menu toggles",
+        confidence: 0.93,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='menu-toggle-btn']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure5.id, 
+    candidates: [
+      {
+        selector: "[data-testid='search-submit-btn']",
+        type: "data-testid",
+        rationale: "Reliable data-testid for search functionality",
+        confidence: 0.96,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='search-submit-btn']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure6.id,
+    candidates: [
+      {
+        selector: "[data-testid='payment-submit-btn']",
+        type: "data-testid", 
+        rationale: "Standard approach for payment button identification",
+        confidence: 0.94,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='payment-submit-btn']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure7.id,
+    candidates: [
+      {
+        selector: "[data-testid='avatar-upload-btn']",
+        type: "data-testid",
+        rationale: "Consistent data-testid pattern for upload buttons",
+        confidence: 0.91,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='avatar-upload-btn']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure8.id,
+    candidates: [
+      {
+        selector: "[data-testid='notification-toggle']",
+        type: "data-testid",
+        rationale: "Standard data-testid for toggle controls",
+        confidence: 0.89,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='notification-toggle']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure9.id,
+    candidates: [
+      {
+        selector: "[data-testid='sort-dropdown']",
+        type: "data-testid",
+        rationale: "Recommended approach for dropdown selectors",
+        confidence: 0.87,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='sort-dropdown']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure10.id,
+    candidates: [
+      {
+        selector: "[data-testid='category-filter-electronics']",
+        type: "data-testid",
+        rationale: "Specific data-testid for category filters",
+        confidence: 0.85,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='category-filter-electronics']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure11.id,
+    candidates: [
+      {
+        selector: "[data-testid='modal-confirm-btn']",
+        type: "data-testid",
+        rationale: "Standard data-testid for modal actions",
+        confidence: 0.92,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='modal-confirm-btn']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure12.id,
+    candidates: [
+      {
+        selector: "[data-testid='pagination-next-btn']",
+        type: "data-testid",
+        rationale: "Consistent data-testid for pagination controls",
+        confidence: 0.90,
+        source: "heuristic"
+      }
+    ],
+    topChoice: "[data-testid='pagination-next-btn']"
+  });
+
+  // Update some statuses for variety
   await dbStorage.updateFailureStatus(failure2.id, "suggested");
   await dbStorage.updateFailureStatus(failure3.id, "approved");
+  await dbStorage.updateFailureStatus(failure6.id, "suggested");
+  await dbStorage.updateFailureStatus(failure8.id, "approved");
+  await dbStorage.updateFailureStatus(failure10.id, "suggested");
+  await dbStorage.updateFailureStatus(failure12.id, "approved");
   
-  console.log("Sample data successfully added to database");
+  console.log("Sample data successfully added to database - 12 failures with suggestions");
 }
 
 // Initialize storage - prefer database if available, fallback to memory
