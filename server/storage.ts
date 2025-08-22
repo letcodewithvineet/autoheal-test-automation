@@ -490,6 +490,7 @@ async function initializeDatabaseSampleData(dbStorage: DatabaseStorage): Promise
     specPath: "cypress/e2e/auth/login.cy.ts",
     browser: "chrome",
     viewport: "1920x1080",
+    screenshotPath: "/cypress/screenshots/Cypress_login_test_failure_screenshot_8d07a0ac.png",
     domHtml: `<div class="login-form">
       <input class="username-input" placeholder="Username" />
       <input class="password-input" type="password" placeholder="Password" />
@@ -867,6 +868,7 @@ async function initializeDatabaseSampleData(dbStorage: DatabaseStorage): Promise
     specPath: "cypress/e2e/tables/pagination.cy.ts",
     browser: "safari",
     viewport: "1280x720",
+    screenshotPath: "/cypress/screenshots/Cypress_dashboard_test_failure_screenshot_c1991408.png",
     domHtml: `<div class="pagination-controls">
       <button class="prev-page" disabled>Previous</button>
       <span class="page-info">Page 1 of 10</span>
