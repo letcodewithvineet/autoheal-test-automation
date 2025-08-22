@@ -7,26 +7,28 @@ import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
 import LoginForm from "@/components/LoginForm";
-import AppHeader from "./components/AppHeader";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
+  // Show loading only for a brief moment, then default to login
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
+          <p className="text-muted-foreground">Checking authentication...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAuthenticated) {
+  // If not authenticated or no user, show login form
+  if (!isAuthenticated || !user) {
     return <LoginForm />;
   }
 
+  // User is authenticated, show dashboard
   return (
     <div className="min-h-screen bg-background">
       <Switch>

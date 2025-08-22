@@ -20,26 +20,34 @@ export function useAuth() {
   const { data: user, isLoading, error } = useQuery<User | null>({
     queryKey: ["/api/auth/me"],
     queryFn: async () => {
-      const response = await fetch("/api/auth/me", {
-        credentials: "include",
-      });
+      try {
+        const response = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
 
-      if (!response.ok) {
-        if (response.status === 401) {
-          return null;
+        if (!response.ok) {
+          if (response.status === 401) {
+            return null; // User not authenticated
+          }
+          const error = await response.json();
+          throw new Error(error.message || "Failed to get user");
         }
-        const error = await response.json();
-        throw new Error(error.message || "Failed to get user");
-      }
 
-      const data = await response.json();
-      return data.user;
+        const data = await response.json();
+        return data.user;
+      } catch (error) {
+        // If there's any network error or other issue, treat as not authenticated
+        console.log("Auth check failed:", error);
+        return null;
+      }
     },
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes (was cacheTime)
   });
 
   return {
-    user,
+    user: user ?? null,
     isLoading,
     isAuthenticated: !!user,
     error,
