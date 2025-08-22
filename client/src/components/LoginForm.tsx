@@ -63,14 +63,17 @@ export default function LoginForm() {
     }
 
     try {
-      await registerMutation.mutateAsync({ username, password });
+      const result = await registerMutation.mutateAsync({ username, password });
       toast({
         title: "Success",
-        description: "Registration successful!",
+        description: result.message || "Account created successfully! Please log in with your credentials.",
       });
+      // Clear the form after successful registration
+      setUsername("");
+      setPassword("");
     } catch (error: any) {
       toast({
-        title: "Error",
+        title: "Error", 
         description: error.message || "Registration failed",
         variant: "destructive",
       });

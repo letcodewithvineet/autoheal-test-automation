@@ -80,12 +80,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         password: hashedPassword,
       });
       
-      // Set session
-      req.session.userId = user.id;
+      // Don't automatically log in after registration
+      // User should manually log in with their credentials
       
       res.status(201).json({ 
         user: { id: user.id, username: user.username },
-        message: "User registered successfully" 
+        message: "Account created successfully! Please log in with your credentials." 
       });
     } catch (error) {
       console.error('Registration error:', error);

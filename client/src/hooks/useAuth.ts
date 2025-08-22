@@ -83,8 +83,6 @@ export function useLogin() {
 }
 
 export function useRegister() {
-  const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async (data: LoginData): Promise<AuthResponse> => {
       const response = await fetch("/api/auth/register", {
@@ -103,10 +101,8 @@ export function useRegister() {
 
       return response.json();
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(["/api/auth/me"], data.user);
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
-    },
+    // Don't automatically log the user in after registration
+    // They need to manually log in with their credentials
   });
 }
 
