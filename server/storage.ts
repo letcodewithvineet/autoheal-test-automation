@@ -462,6 +462,185 @@ const initializeSampleData = async () => {
   await memoryStorage.updateFailureStatus(failure3.id, "approved");
 };
 
+// Initialize sample data for database storage
+async function initializeDatabaseSampleData(dbStorage: DatabaseStorage): Promise<void> {
+  // Check if we already have data
+  const existingFailures = await dbStorage.getFailures();
+  if (existingFailures.length > 0) {
+    console.log("Database already has sample data, skipping initialization");
+    return;
+  }
+
+  console.log("Initializing sample data in database...");
+
+  // Create sample failures
+  const failure1 = await dbStorage.createFailure({
+    runId: "run-001-login-test",
+    repo: "frontend-app",
+    branch: "main",
+    commit: "a1b2c3d",
+    suite: "authentication",
+    test: "user login flow",
+    specPath: "cypress/e2e/auth/login.cy.ts",
+    browser: "chrome",
+    viewport: "1920x1080",
+    domHtml: `<div class="login-form">
+      <input class="username-input" placeholder="Username" />
+      <input class="password-input" type="password" placeholder="Password" />
+      <button class="submit-btn">Login</button>
+    </div>`,
+    consoleLogs: [
+      { level: "error", message: "Element not found: [data-testid='login-submit']", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "POST", url: "/api/auth/login", status: 401, timestamp: Date.now() }
+    ],
+    currentSelector: "[data-testid='login-submit']",
+    selectorContext: {
+      element: "button",
+      text: "Login",
+      className: "submit-btn",
+      position: { x: 100, y: 200 }
+    },
+    errorMessage: "Element not found: [data-testid='login-submit']",
+    status: "new"
+  });
+
+  const failure2 = await dbStorage.createFailure({
+    runId: "run-002-ecommerce",
+    repo: "e-commerce-app", 
+    branch: "feature/cart-updates",
+    commit: "f4e5d6c",
+    suite: "shopping",
+    test: "add product to cart",
+    specPath: "cypress/e2e/shopping/cart.cy.ts",
+    browser: "firefox",
+    viewport: "1366x768",
+    domHtml: `<div class="product-card">
+      <h3>Wireless Headphones</h3>
+      <div class="price">$99.99</div>
+      <button class="add-to-cart">Add to Cart</button>
+    </div>`,
+    consoleLogs: [
+      { level: "warn", message: "Slow network detected", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "POST", url: "/api/cart/add", status: 500, timestamp: Date.now() }
+    ],
+    currentSelector: ".product-add-btn",
+    selectorContext: {
+      element: "button", 
+      text: "Add to Cart",
+      className: "add-to-cart",
+      dataAttributes: {},
+      position: { x: 150, y: 300 }
+    },
+    errorMessage: "Button click failed - element not interactive",
+    status: "new"
+  });
+
+  const failure3 = await dbStorage.createFailure({
+    runId: "run-003-dashboard",
+    repo: "api-service",
+    branch: "develop",
+    commit: "g7h8i9j",
+    suite: "dashboard",
+    test: "revenue chart display",
+    specPath: "cypress/e2e/dashboard/charts.cy.ts", 
+    browser: "edge",
+    viewport: "1440x900",
+    domHtml: `<div class="dashboard-stats">
+      <div class="chart-container">
+        <canvas id="revenue-chart"></canvas>
+      </div>
+    </div>`,
+    consoleLogs: [
+      { level: "error", message: "Chart rendering failed", timestamp: Date.now() }
+    ],
+    networkLogs: [
+      { method: "GET", url: "/api/analytics/revenue", status: 200, timestamp: Date.now() }
+    ],
+    currentSelector: "#revenue-chart-legend",
+    selectorContext: {
+      element: "div",
+      className: "chart-legend",
+      position: { x: 300, y: 400 }
+    },
+    errorMessage: "Cannot read property 'click' of null",
+    status: "new"
+  });
+
+  // Create sample suggestions
+  await dbStorage.createSuggestion({
+    failureId: failure1.id,
+    candidates: [
+      {
+        selector: "[data-testid='button-login-submit']",
+        type: "data-testid",
+        rationale: "Uses data-testid attribute which is the most reliable for testing",
+        confidence: 0.95,
+        source: "heuristic"
+      },
+      {
+        selector: "button.submit-btn",
+        type: "class",
+        rationale: "Uses class selector as fallback option",
+        confidence: 0.75,
+        source: "ai"
+      }
+    ],
+    topChoice: "[data-testid='button-login-submit']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure2.id,
+    candidates: [
+      {
+        selector: "[data-testid='add-to-cart-btn']",
+        type: "data-testid", 
+        rationale: "Recommended data-testid approach for reliable element identification",
+        confidence: 0.98,
+        source: "heuristic"
+      },
+      {
+        selector: ".btn-primary:contains('Add to Cart')",
+        type: "class+text",
+        rationale: "Combines class with text content for specificity",
+        confidence: 0.80,
+        source: "ai"
+      }
+    ],
+    topChoice: "[data-testid='add-to-cart-btn']"
+  });
+
+  await dbStorage.createSuggestion({
+    failureId: failure3.id,
+    candidates: [
+      {
+        selector: "[role='img'][aria-label='Revenue Chart']",
+        type: "aria",
+        rationale: "Uses semantic ARIA attributes for accessibility and reliability",
+        confidence: 0.92,
+        source: "heuristic"
+      },
+      {
+        selector: "[data-chart='revenue']",
+        type: "data-attribute",
+        rationale: "Uses specific data attribute for chart identification", 
+        confidence: 0.88,
+        source: "ai"
+      }
+    ],
+    topChoice: "[role='img'][aria-label='Revenue Chart']"
+  });
+
+  // Update some statuses
+  await dbStorage.updateFailureStatus(failure2.id, "suggested");
+  await dbStorage.updateFailureStatus(failure3.id, "approved");
+  
+  console.log("Sample data successfully added to database");
+}
+
 // Initialize storage - prefer database if available, fallback to memory
 async function initializeStorage(): Promise<IStorage> {
   if (process.env.DATABASE_URL) {
@@ -470,6 +649,10 @@ async function initializeStorage(): Promise<IStorage> {
       // Test the connection by trying to fetch failures
       await dbStorage.getFailures();
       console.log("Connected to PostgreSQL database");
+      
+      // Initialize sample data if database is empty
+      await initializeDatabaseSampleData(dbStorage);
+      
       return dbStorage;
     } catch (error) {
       console.warn("Database connection failed, using in-memory storage:", error);
