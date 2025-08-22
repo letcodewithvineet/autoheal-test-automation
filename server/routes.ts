@@ -1,17 +1,44 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertFailureSchema } from "@shared/schema";
+import { insertFailureSchema, insertUserSchema } from "@shared/schema";
 import { aiAdvisor } from "./services/aiAdvisor";
 import { githubService } from "./services/github";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcrypt";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 
 const upload = multer({ dest: 'uploads/' });
 
+// Authentication middleware
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  if (!req.session?.userId) {
+    return res.status(401).json({ message: "Authentication required" });
+  }
+  next();
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Session configuration
+  const PgSession = connectPg(session);
+  app.use(session({
+    store: new PgSession({
+      conString: process.env.DATABASE_URL,
+      createTableIfMissing: true,
+    }),
+    secret: process.env.SESSION_SECRET || 'autoheal-session-secret-dev',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  }));
   // Static file serving for screenshots
   app.use('/api/screenshots', express.static(path.join(process.cwd(), 'screenshots')));
   // CORS headers for web package integration
@@ -33,8 +60,102 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // Failures routes
-  app.get("/api/failures", async (req, res) => {
+  // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(validatedData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+      
+      // Hash password
+      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+      
+      // Create user
+      const user = await storage.createUser({
+        username: validatedData.username,
+        password: hashedPassword,
+      });
+      
+      // Set session
+      req.session.userId = user.id;
+      
+      res.status(201).json({ 
+        user: { id: user.id, username: user.username },
+        message: "User registered successfully" 
+      });
+    } catch (error) {
+      console.error('Registration error:', error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid request data", errors: error.errors });
+      }
+      res.status(500).json({ message: "Registration failed" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
+      }
+      
+      // Find user
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Check password
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+      
+      // Set session
+      req.session.userId = user.id;
+      
+      res.json({ 
+        user: { id: user.id, username: user.username },
+        message: "Login successful" 
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Logout error:', err);
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.clearCookie('connect.sid');
+      res.json({ message: "Logout successful" });
+    });
+  });
+
+  app.get("/api/auth/me", requireAuth, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.userId!);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ user: { id: user.id, username: user.username } });
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ message: "Failed to get user" });
+    }
+  });
+
+  // Failures routes (protected)
+  app.get("/api/failures", requireAuth, async (req, res) => {
     try {
       const filters: any = {};
       if (req.query.repo) filters.repo = req.query.repo as string;
@@ -61,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/failures/:id", async (req, res) => {
+  app.get("/api/failures/:id", requireAuth, async (req, res) => {
     try {
       const failure = await storage.getFailure(req.params.id);
       if (!failure) {
@@ -76,7 +197,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/failures", upload.single('screenshot'), async (req, res) => {
+  app.post("/api/failures", requireAuth, upload.single('screenshot'), async (req, res) => {
     try {
       const validatedData = insertFailureSchema.parse(req.body);
       
@@ -122,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/failures/:id/suggest", async (req, res) => {
+  app.post("/api/failures/:id/suggest", requireAuth, async (req, res) => {
     try {
       const failure = await storage.getFailure(req.params.id);
       if (!failure) {
@@ -143,8 +264,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Suggestions routes
-  app.get("/api/suggestions/:failureId", async (req, res) => {
+  // Suggestions routes (protected)
+  app.get("/api/suggestions/:failureId", requireAuth, async (req, res) => {
     try {
       const suggestions = await storage.getSuggestionsByFailureId(req.params.failureId);
       res.json(suggestions);
@@ -153,8 +274,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Approvals routes
-  app.post("/api/approvals", async (req, res) => {
+  // Approvals routes (protected)
+  app.post("/api/approvals", requireAuth, async (req, res) => {
     try {
       const approvalSchema = z.object({
         suggestionId: z.string(),
