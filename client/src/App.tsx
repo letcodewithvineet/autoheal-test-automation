@@ -6,6 +6,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/Dashboard";
+import Suggestions from "@/pages/Suggestions";
+import Approvals from "@/pages/Approvals";
+import PullRequests from "@/pages/PullRequests";
+import Selectors from "@/pages/Selectors";
+import Settings from "@/pages/Settings";
+import Analytics from "@/pages/Analytics";
 import LoginForm from "@/components/LoginForm";
 
 function Router() {
@@ -28,12 +34,18 @@ function Router() {
     return <LoginForm />;
   }
 
-  // User is authenticated, show dashboard
+  // User is authenticated, show dashboard with routing
   return (
     <div className="min-h-screen bg-background">
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/dashboard" component={Dashboard} />
+        <Route path="/failures" component={Dashboard} />
+        <Route path="/suggestions" component={Suggestions} />
+        <Route path="/approvals" component={Approvals} />
+        <Route path="/pull-requests" component={PullRequests} />
+        <Route path="/selectors" component={Selectors} />
+        <Route path="/settings" component={Settings} />
+        <Route path="/analytics" component={Analytics} />
         <Route component={NotFound} />
       </Switch>
     </div>

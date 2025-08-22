@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { Link, useLocation } from "wouter";
 
 const navigationItems = [
   { 
@@ -7,29 +8,33 @@ const navigationItems = [
     icon: 'fas fa-exclamation-triangle',
     badge: '12',
     badgeVariant: 'default' as const,
-    active: true
+    path: '/failures'
   },
   { 
     id: 'suggestions', 
     label: 'Suggestions', 
     icon: 'fas fa-lightbulb',
     badge: '5',
-    badgeVariant: 'secondary' as const
+    badgeVariant: 'secondary' as const,
+    path: '/suggestions'
   },
   { 
     id: 'approvals', 
     label: 'Approvals', 
-    icon: 'fas fa-check-circle'
+    icon: 'fas fa-check-circle',
+    path: '/approvals'
   },
   { 
     id: 'pull-requests', 
     label: 'Pull Requests', 
-    icon: 'fas fa-code-branch'
+    icon: 'fas fa-code-branch',
+    path: '/pull-requests'
   },
   { 
     id: 'selectors', 
     label: 'Selectors', 
-    icon: 'fas fa-crosshairs'
+    icon: 'fas fa-crosshairs',
+    path: '/selectors'
   },
 ];
 
@@ -37,16 +42,20 @@ const settingsItems = [
   { 
     id: 'settings', 
     label: 'Settings', 
-    icon: 'fas fa-cog'
+    icon: 'fas fa-cog',
+    path: '/settings'
   },
   { 
     id: 'analytics', 
     label: 'Analytics', 
-    icon: 'fas fa-chart-bar'
+    icon: 'fas fa-chart-bar',
+    path: '/analytics'
   },
 ];
 
 export default function Sidebar() {
+  const [location] = useLocation();
+  
   return (
     <div className="w-64 bg-white border-r border-slate-200 flex flex-col" data-testid="sidebar">
       {/* Logo & Header */}
@@ -63,49 +72,59 @@ export default function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {navigationItems.map((item) => (
-            <li key={item.id}>
-              <a
-                href="#"
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                  item.active
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-700 hover:bg-slate-100'
-                }`}
-                data-testid={`nav-${item.id}`}
-              >
-                <i className={`${item.icon} w-4 h-4`}></i>
-                <span className={item.active ? 'font-medium' : ''}>{item.label}</span>
-                {item.badge && (
-                  <Badge 
-                    variant={item.badgeVariant}
-                    className={`ml-auto text-xs px-2 py-1 ${
-                      item.active ? 'bg-blue-600 text-white' : ''
-                    }`}
-                    data-testid={`badge-${item.id}`}
-                  >
-                    {item.badge}
-                  </Badge>
-                )}
-              </a>
-            </li>
-          ))}
+          {navigationItems.map((item) => {
+            const isActive = location === item.path || (location === '/' && item.id === 'failures');
+            return (
+              <li key={item.id}>
+                <Link
+                  to={item.path}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                  data-testid={`nav-${item.id}`}
+                >
+                  <i className={`${item.icon} w-4 h-4`}></i>
+                  <span className={isActive ? 'font-medium' : ''}>{item.label}</span>
+                  {item.badge && (
+                    <Badge 
+                      variant={item.badgeVariant}
+                      className={`ml-auto text-xs px-2 py-1 ${
+                        isActive ? 'bg-blue-600 text-white' : ''
+                      }`}
+                      data-testid={`badge-${item.id}`}
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <div className="mt-8 pt-4 border-t border-slate-200">
           <ul className="space-y-2">
-            {settingsItems.map((item) => (
-              <li key={item.id}>
-                <a
-                  href="#"
-                  className="flex items-center space-x-3 px-3 py-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors"
-                  data-testid={`nav-${item.id}`}
-                >
-                  <i className={`${item.icon} w-4 h-4`}></i>
-                  <span>{item.label}</span>
-                </a>
-              </li>
-            ))}
+            {settingsItems.map((item) => {
+              const isActive = location === item.path;
+              return (
+                <li key={item.id}>
+                  <Link
+                    to={item.path}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 font-medium'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                    data-testid={`nav-${item.id}`}
+                  >
+                    <i className={`${item.icon} w-4 h-4`}></i>
+                    <span>{item.label}</span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </nav>
