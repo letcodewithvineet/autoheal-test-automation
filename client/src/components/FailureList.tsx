@@ -29,7 +29,45 @@ interface Failure {
 
 export default function FailureList({ filters, onFailureSelect, selectedFailureId }: FailureListProps) {
   const { data: failures, isLoading, error } = useQuery<Failure[]>({
-    queryKey: ['/api/failures'],
+    queryKey: ['/api/failures', filters],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      
+      // Add repository filter
+      if (filters.repo && filters.repo !== 'all') {
+        params.append('repo', filters.repo);
+      }
+      
+      // Add timeframe filter  
+      if (filters.timeframe) {
+        const now = new Date();
+        let since: Date;
+        
+        switch (filters.timeframe) {
+          case 'day':
+            since = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            break;
+          case 'week':
+            since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // Default to week
+        }
+        params.append('since', since.toISOString());
+      }
+      
+      const url = `/api/failures${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch failures: ${response.status}`);
+      }
+      
+      return response.json();
+    },
     enabled: true,
   });
 
