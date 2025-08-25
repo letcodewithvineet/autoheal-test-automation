@@ -160,7 +160,15 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
                   key={`${candidate.selector}-${index}`}
                   suggestion={candidate}
                   rank={index}
-                  onApprove={() => onApproveSuggestion({ ...candidate, suggestionId: failure.suggestions[0].id })}
+                  onApprove={(customSelector) => {
+                    const suggestionData = { ...candidate, suggestionId: failure.suggestions[0].id };
+                    if (customSelector) {
+                      suggestionData.selector = customSelector;
+                      suggestionData.source = 'custom';
+                      suggestionData.rationale = `Custom selector: ${customSelector}`;
+                    }
+                    onApproveSuggestion(suggestionData);
+                  }}
                   data-testid={`suggestion-card-${index}`}
                 />
               ))

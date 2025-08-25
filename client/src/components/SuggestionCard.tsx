@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { useState } from "react";
 
 interface SuggestionCardProps {
   suggestion: {
@@ -11,11 +13,14 @@ interface SuggestionCardProps {
     type: string;
   };
   rank: number;
-  onApprove: () => void;
+  onApprove: (customSelector?: string) => void;
   onReject?: () => void;
 }
 
 export default function SuggestionCard({ suggestion, rank, onApprove, onReject }: SuggestionCardProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [customSelector, setCustomSelector] = useState(suggestion.selector);
+  const isRecommended = rank === 0;
   const getRankLabel = (rank: number) => {
     switch (rank) {
       case 0: return 'Recommended';
@@ -67,14 +72,67 @@ export default function SuggestionCard({ suggestion, rank, onApprove, onReject }
           </div>
         </div>
         
-        <div 
-          className={`font-mono text-sm rounded p-2 mb-2 ${
-            rank === 0 ? 'bg-white border border-green-200' : 'bg-white border border-slate-200'
-          }`}
-          data-testid={`suggestion-selector-${rank}`}
-        >
-          {suggestion.selector}
-        </div>
+        {isRecommended && isEditing ? (
+          <div className="space-y-2 mb-2">
+            <Input
+              value={customSelector}
+              onChange={(e) => setCustomSelector(e.target.value)}
+              className="font-mono text-sm"
+              placeholder="Enter custom selector..."
+              data-testid={`suggestion-selector-input-${rank}`}
+            />
+            <div className="flex space-x-2">
+              <Button
+                onClick={() => {
+                  setIsEditing(false);
+                  if (customSelector.trim()) {
+                    // Keep the custom selector
+                  } else {
+                    setCustomSelector(suggestion.selector);
+                  }
+                }}
+                size="sm"
+                variant="outline"
+                className="text-xs"
+                data-testid={`button-save-selector-${rank}`}
+              >
+                Save
+              </Button>
+              <Button
+                onClick={() => {
+                  setIsEditing(false);
+                  setCustomSelector(suggestion.selector);
+                }}
+                size="sm"
+                variant="ghost"
+                className="text-xs"
+                data-testid={`button-cancel-edit-${rank}`}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div 
+            className={`font-mono text-sm rounded p-2 mb-2 relative group ${
+              rank === 0 ? 'bg-white border border-green-200' : 'bg-white border border-slate-200'
+            }`}
+            data-testid={`suggestion-selector-${rank}`}
+          >
+            <div className="pr-8">{customSelector}</div>
+            {isRecommended && (
+              <Button
+                onClick={() => setIsEditing(true)}
+                size="sm"
+                variant="ghost"
+                className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                data-testid={`button-edit-selector-${rank}`}
+              >
+                <i className="fas fa-edit text-xs"></i>
+              </Button>
+            )}
+          </div>
+        )}
         
         <div className="text-sm text-slate-600 mb-3" data-testid={`suggestion-rationale-${rank}`}>
           {suggestion.rationale}
@@ -86,7 +144,7 @@ export default function SuggestionCard({ suggestion, rank, onApprove, onReject }
           </span>
           <div className="flex space-x-2">
             <Button
-              onClick={onApprove}
+              onClick={() => onApprove(isRecommended && customSelector !== suggestion.selector ? customSelector : undefined)}
               size="sm"
               className={`text-xs font-medium ${
                 rank === 0 
