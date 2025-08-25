@@ -242,6 +242,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Suggestions routes (protected)
+  app.get("/api/suggestions", requireAuth, async (req, res) => {
+    try {
+      // Get all suggestions across all failures
+      const failures = await storage.getFailures({});
+      const allSuggestions: any[] = [];
+      
+      for (const failure of failures) {
+        const suggestions = await storage.getSuggestionsByFailureId(failure.id);
+        for (const suggestion of suggestions) {
+          // Enrich suggestion with failure context
+          allSuggestions.push({
+            ...suggestion,
+            test: failure.test,
+            repo: failure.repo,
+            status: failure.status === 'approved' ? 'approved' : 
+                   failure.status === 'rejected' ? 'rejected' : 'pending'
+          });
+        }
+      }
+      
+      // Sort by creation date (newest first)
+      allSuggestions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      
+      res.json(allSuggestions);
+    } catch (error) {
+      console.error('Error fetching all suggestions:', error);
+      res.status(500).json({ message: "Failed to fetch suggestions" });
+    }
+  });
+  
   app.get("/api/suggestions/:failureId", requireAuth, async (req, res) => {
     try {
       const suggestions = await storage.getSuggestionsByFailureId(req.params.failureId);
