@@ -1,14 +1,19 @@
 import mongoose from 'mongoose';
 
-// MongoDB connection string - prefer MONGODB_URL, fallback to local MongoDB
-let mongoUrl = process.env.MONGODB_URL || 'mongodb://localhost:27017/autoheal';
+// MongoDB connection string - use provided credentials
+let mongoUrl = process.env.MONGO_URL || process.env.MONGODB_URL || 'mongodb://localhost:27017/autoheal';
 
 // If DATABASE_URL is PostgreSQL, don't use it for MongoDB
 if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('postgres')) {
-  console.log('PostgreSQL DATABASE_URL detected, using local MongoDB instead');
-  mongoUrl = 'mongodb://localhost:27017/autoheal';
+  console.log('PostgreSQL DATABASE_URL detected, using MongoDB credentials instead');
 } else if (process.env.DATABASE_URL && process.env.DATABASE_URL.startsWith('mongodb')) {
   mongoUrl = process.env.DATABASE_URL;
+}
+
+// Override with user-provided MongoDB URL if available
+if (process.env.MONGO_URL) {
+  mongoUrl = process.env.MONGO_URL;
+  console.log('Using provided MongoDB Atlas connection');
 }
 
 let isConnected = false;
