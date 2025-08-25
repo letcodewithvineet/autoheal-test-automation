@@ -51,14 +51,17 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
     onSuccess: async (data) => {
       console.log('Regeneration successful, new data:', data);
       
-      // Force refetch the specific failure data
-      await refetch();
-      
-      // Also invalidate related queries
-      queryClient.invalidateQueries({ 
-        queryKey: ['/api/failures'],
-        refetchType: 'active'
-      });
+      // Add a small delay to ensure backend has processed the suggestion
+      setTimeout(async () => {
+        // Force refetch the specific failure data
+        await refetch();
+        
+        // Also invalidate related queries
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/failures'],
+          refetchType: 'active'
+        });
+      }, 500);
       
       toast({
         title: "Success",

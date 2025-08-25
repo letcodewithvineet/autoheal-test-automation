@@ -59,16 +59,118 @@ export class AIAdvisor {
     const candidates: SelectorCandidate[] = [];
     const selectorContext = failure.selectorContext as any;
     
-    if (!selectorContext) return candidates;
-
-    // Extract DOM elements from the context
-    const domElements = this.extractDOMElements(failure.domHtml);
-    const targetElement = this.findTargetElement(domElements, failure.currentSelector);
+    console.log('Generating heuristic candidates for failure:', failure.id);
+    console.log('Selector context:', selectorContext);
+    console.log('Current selector:', failure.currentSelector);
     
-    if (!targetElement) return candidates;
+    // Generate basic fallback suggestions based on common patterns
+    this.generateBasicSuggestions(failure, candidates);
+    
+    // Try to extract from DOM if available
+    if (failure.domHtml && selectorContext) {
+      try {
+        const domElements = this.extractDOMElements(failure.domHtml);
+        const targetElement = this.findTargetElement(domElements, failure.currentSelector);
+        
+        if (targetElement) {
+          this.generateDOMBasedSuggestions(targetElement, candidates);
+        }
+      } catch (error) {
+        console.log('DOM parsing failed, using basic suggestions only:', error);
+      }
+    }
+    
+    console.log('Generated', candidates.length, 'heuristic candidates');
+    return candidates;
+  }
+  
+  /**
+   * Generate basic suggestions based on common selector patterns
+   */
+  private generateBasicSuggestions(failure: Failure, candidates: SelectorCandidate[]): void {
+    const currentSelector = failure.currentSelector;
+    const selectorContext = failure.selectorContext as any;
+    
+    // Common data-testid patterns
+    if (selectorContext?.element === 'button') {
+      candidates.push({
+        selector: `[data-testid="${this.generateTestId(selectorContext.text || 'button')}"]`,
+        type: "heuristic",
+        rationale: "Reliable data-testid for button elements",
+        confidence: 0.95,
+        source: "heuristic"
+      });
+    }
+    
+    // Role-based selectors
+    if (selectorContext?.element) {
+      candidates.push({
+        selector: `[role="${this.mapElementToRole(selectorContext.element)}"]`,
+        type: "heuristic", 
+        rationale: "Semantic role-based selector for accessibility",
+        confidence: 0.85,
+        source: "heuristic"
+      });
+    }
+    
+    // Text-based selectors
+    if (selectorContext?.text) {
+      candidates.push({
+        selector: `button:contains("${selectorContext.text}")`,
+        type: "heuristic",
+        rationale: "Text-based selector for unique button text",
+        confidence: 0.75,
+        source: "heuristic"
+      });
+    }
+    
+    // Improved class-based selectors
+    if (currentSelector.includes('.')) {
+      const className = currentSelector.replace(/^\.|#.*$/g, '').split('.')[0];
+      if (className) {
+        candidates.push({
+          selector: `.${className}-btn, .${className}-button`,
+          type: "heuristic",
+          rationale: "More specific class-based selector with button variants",
+          confidence: 0.70,
+          source: "heuristic"
+        });
+      }
+    }
+  }
+  
+  /**
+   * Generate a test ID from text content
+   */
+  private generateTestId(text: string): string {
+    return text.toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+  
+  /**
+   * Map element types to semantic roles
+   */
+  private mapElementToRole(element: string): string {
+    const roleMap: Record<string, string> = {
+      'button': 'button',
+      'input': 'textbox',
+      'select': 'combobox',
+      'textarea': 'textbox',
+      'a': 'link',
+      'img': 'img'
+    };
+    return roleMap[element] || 'button';
+  }
+  
+  /**
+   * Generate suggestions based on DOM element analysis
+   */
+  private generateDOMBasedSuggestions(targetElement: any, candidates: SelectorCandidate[]): void {
 
     // Priority 1: data-testid attributes
-    if (targetElement.getAttribute('data-testid')) {
+    if (targetElement.getAttribute && targetElement.getAttribute('data-testid')) {
       candidates.push({
         selector: `[data-testid="${targetElement.getAttribute('data-testid')}"]`,
         type: "heuristic",
