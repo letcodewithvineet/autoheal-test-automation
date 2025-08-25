@@ -2,12 +2,12 @@ import express, { type Express, type Request, type Response, type NextFunction }
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
-import { insertFailureSchema, insertUserSchema } from "@shared/schema";
+import { insertFailureSchema, insertUserSchema } from "@shared/schemas-mongo";
 import { aiAdvisor } from "./services/aiAdvisor";
 import { githubService } from "./services/github";
 import bcrypt from "bcrypt";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
+import MemoryStore from "memorystore";
 
 
 // Authentication middleware
@@ -19,12 +19,11 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Session configuration
-  const PgSession = connectPg(session);
+  // Session configuration with in-memory store for MongoDB
+  const MemStore = MemoryStore(session);
   app.use(session({
-    store: new PgSession({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
+    store: new MemStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
     }),
     secret: process.env.SESSION_SECRET || 'autoheal-session-secret-dev',
     resave: false,

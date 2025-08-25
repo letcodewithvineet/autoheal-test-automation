@@ -1,11 +1,11 @@
-import { 
-  users, 
-  failures, 
-  suggestions, 
-  approvals, 
-  selectors, 
-  runs,
-  type User, 
+import {
+  UserModel,
+  FailureModel,
+  SuggestionModel,
+  ApprovalModel,
+  SelectorModel,
+  RunModel,
+  type User,
   type InsertUser,
   type Failure,
   type InsertFailure,
@@ -17,9 +17,8 @@ import {
   type InsertSelector,
   type Run,
   type InsertRun
-} from "@shared/schema";
-import { db } from "./db";
-import { eq, desc, and, sql } from "drizzle-orm";
+} from "@shared/schemas-mongo";
+import { connectToMongoDB } from "./db-mongo";
 
 export interface IStorage {
   // Users
@@ -52,106 +51,138 @@ export interface IStorage {
   updateRunStatus(id: string, status: string, completedAt?: Date): Promise<void>;
 }
 
-export class DatabaseStorage implements IStorage {
+export class MongoStorage implements IStorage {
+  private isConnected = false;
+
+  constructor() {
+    // Don't await connection in constructor to avoid blocking
+    this.initConnection();
+  }
+
+  private async initConnection() {
+    try {
+      await connectToMongoDB();
+      this.isConnected = true;
+    } catch (error) {
+      console.warn('MongoDB connection failed in MongoStorage:', error.message);
+      this.isConnected = false;
+    }
+  }
+
+  private convertMongoDoc(doc: any): any {
+    if (!doc) return undefined;
+    const obj = doc.toObject ? doc.toObject() : doc;
+    if (obj._id) {
+      obj.id = obj._id.toString();
+      delete obj._id;
+    }
+    delete obj.__v;
+    return obj;
+  }
+
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    if (!this.isConnected) throw new Error('MongoDB not connected');
+    const user = await UserModel.findById(id);
+    return this.convertMongoDoc(user);
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+    const user = await UserModel.findOne({ username });
+    return this.convertMongoDoc(user);
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
+    const user = new UserModel(insertUser);
+    await user.save();
+    return this.convertMongoDoc(user);
   }
 
   async getFailures(filters?: { repo?: string; status?: string; since?: Date }): Promise<Failure[]> {
-    const conditions = [];
+    const query: any = {};
     
-    if (filters?.repo) conditions.push(eq(failures.repo, filters.repo));
-    if (filters?.status) conditions.push(eq(failures.status, filters.status));
-    if (filters?.since) conditions.push(sql`${failures.timestamp} >= ${filters.since}`);
+    if (filters?.repo) query.repo = filters.repo;
+    if (filters?.status) query.status = filters.status;
+    if (filters?.since) query.timestamp = { $gte: filters.since };
     
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-    
-    return await db.select().from(failures)
-      .where(whereClause)
-      .orderBy(desc(failures.timestamp));
+    const failures = await FailureModel.find(query).sort({ timestamp: -1 });
+    return failures.map(f => this.convertMongoDoc(f));
   }
 
   async getFailure(id: string): Promise<Failure | undefined> {
-    const [failure] = await db.select().from(failures).where(eq(failures.id, id));
-    return failure || undefined;
+    const failure = await FailureModel.findById(id);
+    return this.convertMongoDoc(failure);
   }
 
   async createFailure(failure: InsertFailure): Promise<Failure> {
-    const [result] = await db.insert(failures).values(failure).returning();
-    return result;
+    const newFailure = new FailureModel(failure);
+    await newFailure.save();
+    return this.convertMongoDoc(newFailure);
   }
 
   async updateFailureStatus(id: string, status: string): Promise<void> {
-    await db.update(failures).set({ status }).where(eq(failures.id, id));
+    await FailureModel.findByIdAndUpdate(id, { status });
   }
 
   async getSuggestionsByFailureId(failureId: string): Promise<Suggestion[]> {
-    return db.select().from(suggestions).where(eq(suggestions.failureId, failureId))
-      .orderBy(desc(suggestions.createdAt));
+    const suggestions = await SuggestionModel.find({ failureId }).sort({ createdAt: -1 });
+    return suggestions.map(s => this.convertMongoDoc(s));
   }
 
   async createSuggestion(suggestion: InsertSuggestion): Promise<Suggestion> {
-    const [result] = await db.insert(suggestions).values(suggestion).returning();
-    return result;
+    const newSuggestion = new SuggestionModel(suggestion);
+    await newSuggestion.save();
+    return this.convertMongoDoc(newSuggestion);
   }
 
   async getSuggestion(id: string): Promise<Suggestion | undefined> {
-    const [suggestion] = await db.select().from(suggestions).where(eq(suggestions.id, id));
-    return suggestion || undefined;
+    const suggestion = await SuggestionModel.findById(id);
+    return this.convertMongoDoc(suggestion);
   }
 
   async createApproval(approval: InsertApproval): Promise<Approval> {
-    const [result] = await db.insert(approvals).values(approval).returning();
-    return result;
+    const newApproval = new ApprovalModel(approval);
+    await newApproval.save();
+    return this.convertMongoDoc(newApproval);
   }
 
   async getApprovalsBySuggestionId(suggestionId: string): Promise<Approval[]> {
-    return db.select().from(approvals).where(eq(approvals.suggestionId, suggestionId))
-      .orderBy(desc(approvals.createdAt));
+    const approvals = await ApprovalModel.find({ suggestionId }).sort({ createdAt: -1 });
+    return approvals.map(a => this.convertMongoDoc(a));
   }
 
   async getSelector(page: string, name: string): Promise<Selector | undefined> {
-    const [selector] = await db.select().from(selectors)
-      .where(and(eq(selectors.page, page), eq(selectors.name, name)));
-    return selector || undefined;
+    const selector = await SelectorModel.findOne({ page, name });
+    return this.convertMongoDoc(selector);
   }
 
   async createSelector(selector: InsertSelector): Promise<Selector> {
-    const [result] = await db.insert(selectors).values(selector).returning();
-    return result;
+    const newSelector = new SelectorModel(selector);
+    await newSelector.save();
+    return this.convertMongoDoc(newSelector);
   }
 
   async updateSelector(page: string, name: string, current: string, historyEntry: any): Promise<void> {
     const existing = await this.getSelector(page, name);
     if (existing) {
       const newHistory = [...(existing.history as any[]), historyEntry];
-      await db.update(selectors)
-        .set({ current, history: newHistory })
-        .where(and(eq(selectors.page, page), eq(selectors.name, name)));
+      await SelectorModel.findOneAndUpdate(
+        { page, name },
+        { current, history: newHistory }
+      );
     }
   }
 
   async createRun(run: InsertRun): Promise<Run> {
-    const [result] = await db.insert(runs).values(run).returning();
-    return result;
+    const newRun = new RunModel(run);
+    await newRun.save();
+    return this.convertMongoDoc(newRun);
   }
 
   async updateRunStatus(id: string, status: string, completedAt?: Date): Promise<void> {
     const updateData: any = { status };
     if (completedAt) updateData.completedAt = completedAt;
     
-    await db.update(runs).set(updateData).where(eq(runs.id, id));
+    await RunModel.findByIdAndUpdate(id, updateData);
   }
 }
 
@@ -174,7 +205,7 @@ export class MemoryStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    for (const [, user] of this.users.entries()) {
+    for (const user of this.users.values()) {
       if (user.username === username) return user;
     }
     return undefined;
@@ -211,9 +242,9 @@ export class MemoryStorage implements IStorage {
       id: this.generateId(),
       timestamp: new Date(),
       status: "new",
-      screenshotPath: failure.screenshotPath || null,
-      screenshotGridfsId: failure.screenshotGridfsId || null,
-      errorMessage: failure.errorMessage || null,
+      screenshotPath: failure.screenshotPath ?? null,
+      screenshotGridfsId: failure.screenshotGridfsId ?? null,
+      errorMessage: failure.errorMessage ?? null,
       ...failure
     };
     this.failures.set(newFailure.id, newFailure);
@@ -237,7 +268,7 @@ export class MemoryStorage implements IStorage {
     const newSuggestion: Suggestion = {
       id: this.generateId(),
       createdAt: new Date(),
-      topChoice: suggestion.topChoice || null,
+      topChoice: suggestion.topChoice ?? null,
       ...suggestion
     };
     this.suggestions.set(newSuggestion.id, newSuggestion);
@@ -252,7 +283,7 @@ export class MemoryStorage implements IStorage {
     const newApproval: Approval = {
       id: this.generateId(),
       createdAt: new Date(),
-      notes: approval.notes || null,
+      notes: approval.notes ?? null,
       ...approval
     };
     this.approvals.set(newApproval.id, newApproval);
@@ -266,7 +297,7 @@ export class MemoryStorage implements IStorage {
   }
 
   async getSelector(page: string, name: string): Promise<Selector | undefined> {
-    for (const [, selector] of this.selectors.entries()) {
+    for (const selector of this.selectors.values()) {
       if (selector.page === page && selector.name === name) return selector;
     }
     return undefined;
@@ -275,8 +306,8 @@ export class MemoryStorage implements IStorage {
   async createSelector(selector: InsertSelector): Promise<Selector> {
     const newSelector: Selector = {
       id: this.generateId(),
-      history: [],
-      ...selector
+      ...selector,
+      history: selector.history || []
     };
     this.selectors.set(newSelector.id, newSelector);
     return newSelector;
@@ -295,7 +326,7 @@ export class MemoryStorage implements IStorage {
       id: this.generateId(),
       startedAt: new Date(),
       completedAt: null,
-      ciRunId: run.ciRunId || null,
+      ciRunId: run.ciRunId ?? null,
       ...run
     };
     this.runs.set(newRun.id, newRun);
@@ -463,7 +494,7 @@ const initializeSampleData = async () => {
 };
 
 // Initialize sample data for database storage
-async function initializeDatabaseSampleData(dbStorage: DatabaseStorage): Promise<void> {
+async function initializeDatabaseSampleData(dbStorage: MongoStorage): Promise<void> {
   // Check if we already have all sample data
   const existingFailures = await dbStorage.getFailures();
   if (existingFailures.length >= 12) {
@@ -1026,20 +1057,18 @@ async function initializeDatabaseSampleData(dbStorage: DatabaseStorage): Promise
 
 // Initialize storage - prefer database if available, fallback to memory
 async function initializeStorage(): Promise<IStorage> {
-  if (process.env.DATABASE_URL) {
-    try {
-      const dbStorage = new DatabaseStorage();
-      // Test the connection by trying to fetch failures
-      await dbStorage.getFailures();
-      console.log("Connected to PostgreSQL database");
-      
-      // Initialize sample data if database is empty
-      await initializeDatabaseSampleData(dbStorage);
-      
-      return dbStorage;
-    } catch (error) {
-      console.warn("Database connection failed, using in-memory storage:", error);
-    }
+  // Try MongoDB connection (local or from MONGODB_URL)
+  try {
+    const dbStorage = new MongoStorage();
+    // Test the connection by trying to fetch failures
+    await dbStorage.getFailures();
+    
+    // Initialize sample data if database is empty
+    await initializeDatabaseSampleData(dbStorage);
+    
+    return dbStorage;
+  } catch (error) {
+    console.warn("MongoDB connection failed, using in-memory storage:", error.message);
   }
   
   console.log("Using in-memory storage with sample data");
@@ -1056,13 +1085,11 @@ initializeSampleData().then(() => {
 });
 
 // Try to initialize database storage
-if (process.env.DATABASE_URL) {
-  initializeStorage().then(initializedStorage => {
-    storage = initializedStorage;
-    console.log('Storage initialized successfully');
-  }).catch(error => {
-    console.warn('Database initialization failed, using memory storage:', error);
-  });
-}
+initializeStorage().then(initializedStorage => {
+  storage = initializedStorage;
+  console.log('Storage initialized successfully');
+}).catch(error => {
+  console.warn('Database initialization failed, using memory storage:', error);
+});
 
 export { storage };
