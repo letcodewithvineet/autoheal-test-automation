@@ -316,7 +316,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Helper function to detect selector type
+  function detectSelectorType(selector: string): string {
+    if (selector.includes('data-testid')) return 'data-testid';
+    if (selector.includes('aria-label') || selector.includes('[role=') || selector.includes('aria-')) return 'aria';
+    if (selector.startsWith('#')) return 'id';
+    if (selector.startsWith('.') || selector.includes('.')) return 'class';
+    if (selector.includes('//') || selector.includes('xpath')) return 'xpath';
+    return 'css';
+  }
+
   // Selectors routes
+  app.get("/api/selectors", requireAuth, async (req, res) => {
+    try {
+      // Generate selector library data from failures and suggestions
+      const failures = await storage.getFailures({});
+      const selectorMap = new Map<string, any>();
+      
+      // Process failures to extract selector data
+      for (const failure of failures) {
+        const suggestions = await storage.getSuggestionsByFailureId(failure.id);
+        
+        // Add original failing selector
+        if (failure.currentSelector && !selectorMap.has(failure.currentSelector)) {
+          selectorMap.set(failure.currentSelector, {
+            id: `original-${failure.id}`,
+            selector: failure.currentSelector,
+            type: detectSelectorType(failure.currentSelector),
+            usage: 1,
+            successRate: 0.0, // Failing selector
+            lastUsed: failure.timestamp,
+            repo: failure.repo,
+            status: 'broken'
+          });
+        } else if (failure.currentSelector && selectorMap.has(failure.currentSelector)) {
+          const existing = selectorMap.get(failure.currentSelector);
+          existing.usage += 1;
+        }
+        
+        // Add suggested selectors
+        for (const suggestion of suggestions) {
+          for (const candidate of suggestion.candidates) {
+            if (!selectorMap.has(candidate.selector)) {
+              selectorMap.set(candidate.selector, {
+                id: `suggested-${suggestion.id}-${candidate.selector.replace(/[^a-zA-Z0-9]/g, '')}`,
+                selector: candidate.selector,
+                type: detectSelectorType(candidate.selector),
+                usage: 1,
+                successRate: candidate.confidence,
+                lastUsed: suggestion.createdAt,
+                repo: failure.repo,
+                status: 'active'
+              });
+            }
+          }
+        }
+      }
+      
+      const selectors = Array.from(selectorMap.values())
+        .sort((a, b) => b.usage - a.usage); // Sort by usage
+      
+      res.json(selectors);
+    } catch (error) {
+      console.error('Error fetching selectors:', error);
+      res.status(500).json({ message: "Failed to fetch selectors" });
+    }
+  });
+  
   app.get("/api/selectors/:page", async (req, res) => {
     try {
       // TODO: Return selector map for page
