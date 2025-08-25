@@ -39,16 +39,27 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
   const queryClient = useQueryClient();
   const { toast } = useToast();
   
-  const { data: failure, isLoading } = useQuery<FailureDetails>({
+  const { data: failure, isLoading, refetch } = useQuery<FailureDetails>({
     queryKey: ['/api', 'failures', failureId],
     enabled: !!failureId,
+    staleTime: 0, // Always consider data stale for immediate refetch
+    refetchOnMount: true,
   });
 
   const regenerateMutation = useMutation({
     mutationFn: () => api.regenerateSuggestions(failureId),
-    onSuccess: () => {
-      // Invalidate and refetch the failure data to get new suggestions
-      queryClient.invalidateQueries({ queryKey: ['/api', 'failures', failureId] });
+    onSuccess: async (data) => {
+      console.log('Regeneration successful, new data:', data);
+      
+      // Force refetch the specific failure data
+      await refetch();
+      
+      // Also invalidate related queries
+      queryClient.invalidateQueries({ 
+        queryKey: ['/api/failures'],
+        refetchType: 'active'
+      });
+      
       toast({
         title: "Success",
         description: "New suggestions generated successfully!",
