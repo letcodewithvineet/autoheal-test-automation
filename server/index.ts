@@ -6,9 +6,6 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve static screenshots
-app.use('/api/screenshots', express.static('public/screenshots'));
-app.use('/api/cypress/screenshots', express.static('cypress/screenshots'));
 
 app.use((req, res, next) => {
   const start = Date.now();

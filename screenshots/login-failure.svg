@@ -1,9 +1,0 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='800' height='600' viewBox='0 0 800 600'>
-  <rect width='800' height='600' fill='#f8f9fa'/>
-  <rect x='200' y='150' width='400' height='300' fill='white' stroke='#dee2e6' stroke-width='1'/>
-  <text x='400' y='200' text-anchor='middle' font-family='Arial, sans-serif' font-size='18' fill='#495057'>AutoHeal Test Screenshot</text>
-  <text x='400' y='240' text-anchor='middle' font-family='Arial, sans-serif' font-size='14' fill='#6c757d'>Login failure captured at:</text>
-  <text x='400' y='260' text-anchor='middle' font-family='Arial, sans-serif' font-size='14' fill='#6c757d'>2025-08-16 19:30:00</text>
-  <rect x='300' y='320' width='200' height='40' fill='#dc3545'/>
-  <text x='400' y='345' text-anchor='middle' font-family='Arial, sans-serif' font-size='14' fill='white'>Failed Element</text>
-</svg>

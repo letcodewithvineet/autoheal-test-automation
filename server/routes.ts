@@ -5,14 +5,10 @@ import { z } from "zod";
 import { insertFailureSchema, insertUserSchema } from "@shared/schema";
 import { aiAdvisor } from "./services/aiAdvisor";
 import { githubService } from "./services/github";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 
-const upload = multer({ dest: 'uploads/' });
 
 // Authentication middleware
 function requireAuth(req: Request, res: Response, next: NextFunction) {
@@ -39,8 +35,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
   }));
-  // Static file serving for screenshots
-  app.use('/api/screenshots', express.static(path.join(process.cwd(), 'screenshots')));
   // CORS headers for web package integration
   app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
@@ -197,26 +191,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/failures", requireAuth, upload.single('screenshot'), async (req, res) => {
+  app.post("/api/failures", requireAuth, async (req, res) => {
     try {
       const validatedData = insertFailureSchema.parse(req.body);
       
-      // Handle screenshot upload
-      if (req.file) {
-        const screenshotPath = `/screenshots/${req.file.filename}`;
-        validatedData.screenshotPath = screenshotPath;
-        
-        // Ensure screenshots directory exists
-        const screenshotsDir = path.join(process.cwd(), 'uploads', 'screenshots');
-        if (!fs.existsSync(screenshotsDir)) {
-          fs.mkdirSync(screenshotsDir, { recursive: true });
-        }
-        
-        // Move file to screenshots directory
-        const oldPath = req.file.path;
-        const newPath = path.join(screenshotsDir, req.file.filename);
-        fs.renameSync(oldPath, newPath);
-      }
       
       const failure = await storage.createFailure(validatedData);
       
@@ -341,8 +319,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Serve uploaded files
-  app.use('/screenshots', express.static(path.join(process.cwd(), 'uploads', 'screenshots')));
 
   const httpServer = createServer(app);
   return httpServer;
