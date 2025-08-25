@@ -1123,7 +1123,43 @@ async function initializeDatabaseSampleData(dbStorage: MongoStorage): Promise<vo
   await dbStorage.updateFailureStatus(failure10.id, "suggested");
   await dbStorage.updateFailureStatus(failure12.id, "approved");
   
-  console.log("Sample data successfully added to database - 12 failures with suggestions");
+  // Create sample approvals for some suggestions
+  const allSuggestions = [
+    await dbStorage.getSuggestionsByFailureId(failure1.id),
+    await dbStorage.getSuggestionsByFailureId(failure3.id),
+    await dbStorage.getSuggestionsByFailureId(failure5.id),
+    await dbStorage.getSuggestionsByFailureId(failure8.id)
+  ].flat();
+  
+  // Create approvals for the first few suggestions
+  if (allSuggestions.length > 0) {
+    await dbStorage.createApproval({
+      suggestionId: allSuggestions[0].id,
+      decision: "approve",
+      approvedBy: "admin",
+      notes: "Good data-testid suggestion for improved stability"
+    });
+  }
+  
+  if (allSuggestions.length > 1) {
+    await dbStorage.createApproval({
+      suggestionId: allSuggestions[1].id,
+      decision: "approve",
+      approvedBy: "tester",
+      notes: "Semantic selector provides better accessibility"
+    });
+  }
+  
+  if (allSuggestions.length > 2) {
+    await dbStorage.createApproval({
+      suggestionId: allSuggestions[2].id,
+      decision: "reject",
+      approvedBy: "reviewer",
+      notes: "Too generic, might select multiple elements"
+    });
+  }
+  
+  console.log("Sample data successfully added to database - 12 failures with suggestions and approvals");
 }
 
 // Initialize storage - prefer database if available, fallback to memory

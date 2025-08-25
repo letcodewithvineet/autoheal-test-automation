@@ -282,6 +282,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Approvals routes (protected)
+  app.get("/api/approvals", requireAuth, async (req, res) => {
+    try {
+      // Get all approvals with enriched data
+      const failures = await storage.getFailures({});
+      const allApprovals: any[] = [];
+      
+      for (const failure of failures) {
+        const suggestions = await storage.getSuggestionsByFailureId(failure.id);
+        
+        for (const suggestion of suggestions) {
+          const approvals = await storage.getApprovalsBySuggestionId(suggestion.id);
+          
+          for (const approval of approvals) {
+            // Find the top candidate from the suggestion
+            const topCandidate = suggestion.candidates.find(c => c.selector === suggestion.topChoice) || suggestion.candidates[0];
+            
+            allApprovals.push({
+              id: approval.id,
+              suggestionId: suggestion.id,
+              test: failure.test,
+              originalSelector: failure.currentSelector,
+              suggestedSelector: suggestion.topChoice,
+              confidence: topCandidate ? topCandidate.confidence : 0.8,
+              rationale: topCandidate ? topCandidate.rationale : 'AI-generated suggestion',
+              status: approval.decision === 'approve' ? 'approved' : approval.decision === 'reject' ? 'rejected' : 'pending',
+              approvedAt: approval.createdAt,
+              approvedBy: approval.approvedBy,
+              notes: approval.notes
+            });
+          }
+        }
+      }
+      
+      // Sort by creation date (newest first)
+      allApprovals.sort((a, b) => new Date(b.approvedAt).getTime() - new Date(a.approvedAt).getTime());
+      
+      res.json(allApprovals);
+    } catch (error) {
+      console.error('Error fetching approvals:', error);
+      res.status(500).json({ message: "Failed to fetch approvals" });
+    }
+  });
+  
   app.post("/api/approvals", requireAuth, async (req, res) => {
     try {
       const approvalSchema = z.object({
