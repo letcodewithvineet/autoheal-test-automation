@@ -6,14 +6,17 @@ import DashboardLayout from "@/components/DashboardLayout";
 
 interface PullRequest {
   id: string;
+  failureId: string;
+  suggestionId: string;
   approvalId: string;
   title: string;
   repo: string;
   branch: string;
   prNumber?: number;
   prUrl?: string;
-  status: 'creating' | 'created' | 'merged' | 'closed' | 'failed';
-  filesChanged: string[];
+  status: 'open' | 'merged' | 'closed';
+  description: string;
+  filesChanged?: string[];
   createdAt: string;
   mergedAt?: string;
 }
@@ -87,7 +90,7 @@ export default function PullRequests() {
                 <div>
                   <h4 className="text-sm font-medium text-slate-700 mb-2">Files Changed</h4>
                   <div className="space-y-1">
-                    {pr.filesChanged.map((file, index) => (
+                    {(pr.filesChanged || []).map((file, index) => (
                       <div key={index} className="flex items-center space-x-2 text-sm">
                         <i className="fas fa-file-code text-blue-500"></i>
                         <code className="text-blue-600">{file}</code>

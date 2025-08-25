@@ -288,7 +288,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   prNumber: prResult.prNumber || 0,
                   prUrl: prResult.prUrl || '',
                   title: `AutoHeal: Fix failing selector in ${failure.suite}`,
-                  description: `Fixed selector from '${failure.currentSelector}' to '${topChoice}'`,
+                  description: `Fixed selector from '${failure.currentSelector}' to '${topChoice}' in ${failure.test}`,
                   repo: failure.repo,
                   branch: failure.branch,
                   status: 'open'

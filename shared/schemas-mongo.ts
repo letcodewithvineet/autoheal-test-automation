@@ -79,6 +79,7 @@ export interface IPullRequest extends Document {
   status: string; // open, merged, closed
   repo: string;
   branch: string;
+  filesChanged?: string[];
   createdAt: Date;
   mergedAt?: Date;
 }
@@ -154,6 +155,7 @@ const PullRequestSchema = new Schema<IPullRequest>({
   status: { type: String, default: 'open' },
   repo: { type: String, required: true },
   branch: { type: String, required: true },
+  filesChanged: { type: Array, default: [] },
   createdAt: { type: Date, default: Date.now },
   mergedAt: { type: Date }
 });
