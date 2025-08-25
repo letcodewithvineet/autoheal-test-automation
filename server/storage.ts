@@ -5,6 +5,7 @@ import {
   ApprovalModel,
   SelectorModel,
   RunModel,
+  PullRequestModel,
   type User,
   type InsertUser,
   type Failure,
@@ -16,7 +17,9 @@ import {
   type Selector,
   type InsertSelector,
   type Run,
-  type InsertRun
+  type InsertRun,
+  type PullRequest,
+  type InsertPullRequest
 } from "@shared/schemas-mongo";
 import { connectToMongoDB } from "./db-mongo";
 
@@ -49,6 +52,11 @@ export interface IStorage {
   // Runs
   createRun(run: InsertRun): Promise<Run>;
   updateRunStatus(id: string, status: string, completedAt?: Date): Promise<void>;
+  
+  // Pull Requests
+  createPullRequest(pullRequest: InsertPullRequest): Promise<PullRequest>;
+  getPullRequests(filters?: { repo?: string; status?: string }): Promise<PullRequest[]>;
+  updatePullRequestStatus(id: string, status: string, mergedAt?: Date): Promise<void>;
 }
 
 export class MongoStorage implements IStorage {
@@ -101,7 +109,12 @@ export class MongoStorage implements IStorage {
     const query: any = {};
     
     if (filters?.repo) query.repo = filters.repo;
-    if (filters?.status) query.status = filters.status;
+    if (filters?.status) {
+      query.status = filters.status;
+    } else {
+      // By default, exclude failures that have PRs created
+      query.status = { $ne: 'pr-created' };
+    }
     if (filters?.since) query.timestamp = { $gte: filters.since };
     
     const failures = await FailureModel.find(query).sort({ timestamp: -1 });
@@ -184,6 +197,29 @@ export class MongoStorage implements IStorage {
     
     await RunModel.findByIdAndUpdate(id, updateData);
   }
+
+  async createPullRequest(pullRequest: InsertPullRequest): Promise<PullRequest> {
+    const newPR = new PullRequestModel(pullRequest);
+    await newPR.save();
+    return this.convertMongoDoc(newPR);
+  }
+
+  async getPullRequests(filters?: { repo?: string; status?: string }): Promise<PullRequest[]> {
+    const query: any = {};
+    
+    if (filters?.repo) query.repo = filters.repo;
+    if (filters?.status) query.status = filters.status;
+    
+    const pullRequests = await PullRequestModel.find(query).sort({ createdAt: -1 });
+    return pullRequests.map(pr => this.convertMongoDoc(pr));
+  }
+
+  async updatePullRequestStatus(id: string, status: string, mergedAt?: Date): Promise<void> {
+    const updateData: any = { status };
+    if (mergedAt) updateData.mergedAt = mergedAt;
+    
+    await PullRequestModel.findByIdAndUpdate(id, updateData);
+  }
 }
 
 // Memory storage implementation as fallback
@@ -194,6 +230,7 @@ export class MemoryStorage implements IStorage {
   private approvals: Map<string, Approval> = new Map();
   private selectors: Map<string, Selector> = new Map();
   private runs: Map<string, Run> = new Map();
+  private pullRequests: Map<string, PullRequest> = new Map();
   private idCounter = 1000;
 
   private generateId(): string {
@@ -225,6 +262,9 @@ export class MemoryStorage implements IStorage {
     }
     if (filters?.status) {
       results = results.filter(f => f.status === filters.status);
+    } else {
+      // By default, exclude failures that have PRs created
+      results = results.filter(f => f.status !== 'pr-created');
     }
     if (filters?.since) {
       results = results.filter(f => f.timestamp >= filters.since!);
@@ -337,6 +377,37 @@ export class MemoryStorage implements IStorage {
     const run = this.runs.get(id);
     if (run) {
       this.runs.set(id, { ...run, status, completedAt: completedAt || null });
+    }
+  }
+
+  async createPullRequest(pullRequest: InsertPullRequest): Promise<PullRequest> {
+    const newPR: PullRequest = {
+      id: this.generateId(),
+      createdAt: new Date(),
+      mergedAt: null,
+      ...pullRequest
+    };
+    this.pullRequests.set(newPR.id, newPR);
+    return newPR;
+  }
+
+  async getPullRequests(filters?: { repo?: string; status?: string }): Promise<PullRequest[]> {
+    let results = Array.from(this.pullRequests.values());
+    
+    if (filters?.repo) {
+      results = results.filter(pr => pr.repo === filters.repo);
+    }
+    if (filters?.status) {
+      results = results.filter(pr => pr.status === filters.status);
+    }
+    
+    return results.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  async updatePullRequestStatus(id: string, status: string, mergedAt?: Date): Promise<void> {
+    const pr = this.pullRequests.get(id);
+    if (pr) {
+      this.pullRequests.set(id, { ...pr, status, mergedAt: mergedAt || null });
     }
   }
 }

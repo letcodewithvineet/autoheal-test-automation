@@ -276,6 +276,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
               
               if (prResult.success) {
                 console.log(`Created PR for approved suggestion: ${prResult.prUrl}`);
+                
+                // Store the PR in our system
+                const candidates = suggestion.candidates as any[];
+                const topChoice = suggestion.topChoice || candidates[0]?.selector;
+                
+                await storage.createPullRequest({
+                  failureId: failure.id,
+                  suggestionId: suggestion.id,
+                  approvalId: approval.id,
+                  prNumber: prResult.prNumber || 0,
+                  prUrl: prResult.prUrl || '',
+                  title: `AutoHeal: Fix failing selector in ${failure.suite}`,
+                  description: `Fixed selector from '${failure.currentSelector}' to '${topChoice}'`,
+                  repo: failure.repo,
+                  branch: failure.branch,
+                  status: 'open'
+                });
+                
                 // Update failure status to indicate PR was created
                 await storage.updateFailureStatus(failure.id, 'pr-created');
               } else {
@@ -305,6 +323,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Selector map endpoint" });
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch selectors" });
+    }
+  });
+
+  // Pull Requests routes (protected)
+  app.get("/api/pull-requests", requireAuth, async (req, res) => {
+    try {
+      const filters = {
+        repo: req.query.repo as string,
+        status: req.query.status as string
+      };
+      
+      // Remove undefined values
+      const cleanFilters = Object.fromEntries(
+        Object.entries(filters).filter(([_, value]) => value !== undefined)
+      );
+      
+      const pullRequests = await storage.getPullRequests(cleanFilters);
+      res.json(pullRequests);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch pull requests" });
     }
   });
 

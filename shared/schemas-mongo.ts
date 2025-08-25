@@ -67,6 +67,22 @@ export interface IRun extends Document {
   completedAt?: Date;
 }
 
+export interface IPullRequest extends Document {
+  _id: string;
+  failureId: string;
+  suggestionId: string;
+  approvalId: string;
+  prNumber: number;
+  prUrl: string;
+  title: string;
+  description: string;
+  status: string; // open, merged, closed
+  repo: string;
+  branch: string;
+  createdAt: Date;
+  mergedAt?: Date;
+}
+
 // MongoDB Schemas
 const UserSchema = new Schema<IUser>({
   username: { type: String, required: true, unique: true },
@@ -127,6 +143,21 @@ const RunSchema = new Schema<IRun>({
   completedAt: { type: Date }
 });
 
+const PullRequestSchema = new Schema<IPullRequest>({
+  failureId: { type: String, required: true },
+  suggestionId: { type: String, required: true },
+  approvalId: { type: String, required: true },
+  prNumber: { type: Number, required: true },
+  prUrl: { type: String, required: true },
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  status: { type: String, default: 'open' },
+  repo: { type: String, required: true },
+  branch: { type: String, required: true },
+  createdAt: { type: Date, default: Date.now },
+  mergedAt: { type: Date }
+});
+
 // Models
 export const UserModel = mongoose.model<IUser>('User', UserSchema);
 export const FailureModel = mongoose.model<IFailure>('Failure', FailureSchema);
@@ -134,6 +165,7 @@ export const SuggestionModel = mongoose.model<ISuggestion>('Suggestion', Suggest
 export const ApprovalModel = mongoose.model<IApproval>('Approval', ApprovalSchema);
 export const SelectorModel = mongoose.model<ISelector>('Selector', SelectorSchema);
 export const RunModel = mongoose.model<IRun>('Run', RunSchema);
+export const PullRequestModel = mongoose.model<IPullRequest>('PullRequest', PullRequestSchema);
 
 // Zod schemas for validation
 export const insertUserSchema = z.object({
@@ -187,6 +219,19 @@ export const insertRunSchema = z.object({
   commit: z.string(),
   ciRunId: z.string().optional(),
   status: z.string()
+});
+
+export const insertPullRequestSchema = z.object({
+  failureId: z.string(),
+  suggestionId: z.string(),
+  approvalId: z.string(),
+  prNumber: z.number(),
+  prUrl: z.string(),
+  title: z.string(),
+  description: z.string(),
+  status: z.string().default('open'),
+  repo: z.string(),
+  branch: z.string()
 });
 
 // Type exports
@@ -259,4 +304,21 @@ export type Run = {
   status: string;
   startedAt: Date;
   completedAt?: Date | null;
+};
+
+export type InsertPullRequest = z.infer<typeof insertPullRequestSchema>;
+export type PullRequest = {
+  id: string;
+  failureId: string;
+  suggestionId: string;
+  approvalId: string;
+  prNumber: number;
+  prUrl: string;
+  title: string;
+  description: string;
+  status: string;
+  repo: string;
+  branch: string;
+  createdAt: Date;
+  mergedAt?: Date | null;
 };
