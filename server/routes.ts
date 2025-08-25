@@ -346,6 +346,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Screenshot serving route
+  app.get("/api/cypress/screenshots/:filename", async (req, res) => {
+    try {
+      const { filename } = req.params;
+      
+      // For demo purposes, generate a placeholder SVG image
+      const svgContent = `
+        <svg width="400" height="300" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100%" height="100%" fill="#f8fafc"/>
+          <rect x="20" y="20" width="360" height="200" fill="#ffffff" stroke="#e2e8f0" stroke-width="2" rx="8"/>
+          <text x="200" y="80" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#64748b">Test Failure Screenshot</text>
+          <text x="200" y="110" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#94a3b8">${filename}</text>
+          <circle cx="100" cy="150" r="8" fill="#ef4444"/>
+          <text x="120" y="155" font-family="Arial, sans-serif" font-size="12" fill="#ef4444">Failed Element</text>
+          <rect x="80" y="170" width="120" height="30" fill="#fee2e2" stroke="#ef4444" stroke-width="1" rx="4"/>
+          <text x="140" y="188" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" fill="#ef4444">Login Button</text>
+        </svg>
+      `;
+      
+      res.setHeader('Content-Type', 'image/svg+xml');
+      res.send(svgContent);
+    } catch (error) {
+      console.error('Error serving screenshot:', error);
+      res.status(404).json({ message: "Screenshot not found" });
+    }
+  });
+
   // Git/PR routes
   app.post("/api/git/pr/:suggestionId/retry", async (req, res) => {
     try {

@@ -1,8 +1,10 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SuggestionCard from "@/components/SuggestionCard";
+import { api } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface FailureDetailProps {
   failureId: string;
@@ -35,15 +37,35 @@ interface Suggestion {
 
 export default function FailureDetail({ failureId, onClose, onApproveSuggestion }: FailureDetailProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   const { data: failure, isLoading } = useQuery<FailureDetails>({
     queryKey: ['/api', 'failures', failureId],
     enabled: !!failureId,
   });
 
+  const regenerateMutation = useMutation({
+    mutationFn: () => api.regenerateSuggestions(failureId),
+    onSuccess: () => {
+      // Invalidate and refetch the failure data to get new suggestions
+      queryClient.invalidateQueries({ queryKey: ['/api', 'failures', failureId] });
+      toast({
+        title: "Success",
+        description: "New suggestions generated successfully!",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to generate new suggestions. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Failed to regenerate suggestions:', error);
+    },
+  });
+
   const handleRegenerateSuggestions = () => {
-    // TODO: Implement regeneration
-    console.log('Regenerating suggestions for', failureId);
+    regenerateMutation.mutate();
   };
 
   const handleExportData = () => {
@@ -123,15 +145,15 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
               <div className="relative">
                 <img 
                   src={`/api${failure.screenshotPath}`} 
-                  alt="Failure screenshot"
-                  className="w-full h-auto"
+                  alt="Test failure screenshot"
+                  className="w-full h-auto max-h-96 object-contain bg-slate-50"
                   data-testid="failure-screenshot"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                     const parent = target.parentElement;
                     if (parent) {
-                      parent.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50"><i class="fas fa-image text-3xl mb-2"></i><p>Screenshot not available</p></div>';
+                      parent.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50"><i class="fas fa-image text-3xl mb-2"></i><p>Screenshot not available</p><p class="text-sm mt-1">Unable to load failure screenshot</p></div>';
                     }
                   }}
                 />
@@ -231,11 +253,12 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
           <div className="flex space-x-3">
             <Button 
               onClick={handleRegenerateSuggestions}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={regenerateMutation.isPending}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
               data-testid="button-regenerate"
             >
-              <i className="fas fa-sync mr-2"></i>
-              Regenerate
+              <i className={`fas ${regenerateMutation.isPending ? 'fa-spinner fa-spin' : 'fa-sync'} mr-2`}></i>
+              {regenerateMutation.isPending ? 'Regenerating...' : 'Regenerate'}
             </Button>
             <Button 
               variant="outline"
