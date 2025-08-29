@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { X, Download, RotateCw } from "lucide-react"
 import { useState } from "react"
@@ -45,12 +45,17 @@ export function ScreenshotDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-6xl w-[95vw] max-h-[95vh] p-0 overflow-hidden" aria-describedby="screenshot-description">
         <DialogHeader className="p-6 pb-4 border-b bg-background">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-lg font-semibold">
-              Screenshot - {testName}
-            </DialogTitle>
+            <div>
+              <DialogTitle className="text-lg font-semibold">
+                Screenshot - {testName}
+              </DialogTitle>
+              <DialogDescription id="screenshot-description" className="text-sm text-gray-500 mt-1">
+                Test failure screenshot captured during execution
+              </DialogDescription>
+            </div>
             <div className="flex items-center gap-2">
               {onRetryScreenshot && (
                 <Button
@@ -84,14 +89,6 @@ export function ScreenshotDialog({
                   Download
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onOpenChange(false)}
-                data-testid="button-close-screenshot-dialog"
-              >
-                <X className="w-4 h-4" />
-              </Button>
             </div>
           </div>
         </DialogHeader>
