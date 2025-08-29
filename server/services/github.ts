@@ -15,6 +15,46 @@ export class GitHubService {
     this.octokit = new Octokit({
       auth: token || process.env.GITHUB_TOKEN,
     });
+    
+    // Test GitHub API access on initialization
+    this.testGitHubAccess();
+  }
+  
+  /**
+   * Test GitHub API access and permissions
+   */
+  private async testGitHubAccess() {
+    try {
+      const { data: user } = await this.octokit.users.getAuthenticated();
+      console.log(`GitHub API connected successfully as: ${user.login}`);
+      
+      // Test repository access
+      try {
+        const { data: repo } = await this.octokit.repos.get({ 
+          owner: 'vineetkumar20', 
+          repo: 'autoheal-test-automation' 
+        });
+        console.log(`Repository access confirmed: ${repo.full_name}`);
+        console.log(`Default branch: ${repo.default_branch}`);
+        console.log(`Permissions: push=${repo.permissions?.push}, admin=${repo.permissions?.admin}`);
+      } catch (repoError) {
+        console.error('Repository access test failed for vineetkumar20/autoheal-test-automation:', repoError.message);
+        
+        // Try letcodewithvineet as fallback
+        try {
+          const { data: repo2 } = await this.octokit.repos.get({ 
+            owner: 'letcodewithvineet', 
+            repo: 'autoheal-test-automation' 
+          });
+          console.log(`Fallback repository access confirmed: ${repo2.full_name}`);
+          console.log(`Permissions: push=${repo2.permissions?.push}, admin=${repo2.permissions?.admin}`);
+        } catch (fallbackError) {
+          console.error('Fallback repository access also failed:', fallbackError.message);
+        }
+      }
+    } catch (error) {
+      console.error('GitHub API authentication failed:', error.message);
+    }
   }
 
   /**
@@ -43,22 +83,36 @@ export class GitHubService {
       }
       
       // Real GitHub API calls when token is available
-      const { data: repoData } = await this.octokit.repos.get({ owner, repo });
-      const baseBranch = repoData.default_branch;
+      console.log(`Creating PR for repo: ${owner}/${repo}`);
       
-      // Create a new branch
+      // First, verify the repository exists and get its details
+      let repoData, baseBranch;
+      try {
+        const response = await this.octokit.repos.get({ owner, repo });
+        repoData = response.data;
+        baseBranch = repoData.default_branch;
+        console.log(`Repository found. Default branch: ${baseBranch}`);
+      } catch (error) {
+        console.error(`Repository not found or inaccessible: ${owner}/${repo}`);
+        throw new Error(`Repository ${owner}/${repo} not found or inaccessible. Please check the repository name and token permissions.`);
+      }
+      
+      // Get the base branch reference
       const { data: baseRef } = await this.octokit.git.getRef({
         owner,
         repo,
         ref: `heads/${baseBranch}`
       });
+      console.log(`Base ref SHA: ${baseRef.object.sha}`);
 
+      console.log(`Creating branch: ${branchName}`);
       await this.octokit.git.createRef({
         owner,
         repo,
         ref: `refs/heads/${branchName}`,
         sha: baseRef.object.sha
       });
+      console.log(`Branch created successfully: ${branchName}`);
 
       // Update selector map and test files
       const changes = await this.generateSelectorChanges(failure, suggestion);
@@ -88,6 +142,18 @@ export class GitHubService {
 
     } catch (error) {
       console.error('Failed to create PR:', error);
+      
+      // Provide specific error message for permission issues
+      if (error.status === 404 && error.message.includes('Not Found')) {
+        return {
+          success: false,
+          error: `GitHub API Error: Cannot access repository or insufficient permissions. Please ensure:
+1. The GitHub token has 'repo' scope with write access
+2. The token belongs to the repository owner or a collaborator
+3. Repository name is correct: ${owner}/${repo}`
+        };
+      }
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -101,7 +167,7 @@ export class GitHubService {
   private parseRepoUrl(repoUrl: string): { owner: string; repo: string } {
     // For the user's specific repository, always use it
     if (repoUrl.includes('autoheal-test-automation') || repoUrl.includes('letcodewithvineet')) {
-      return { owner: 'letcodewithvineet', repo: 'autoheal-test-automation' };
+      return { owner: 'vineetkumar20', repo: 'autoheal-test-automation' };
     }
     
     // Handle various GitHub URL formats
