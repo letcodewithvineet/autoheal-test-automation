@@ -36,18 +36,25 @@ function Router() {
 
   // User is authenticated, show dashboard with routing
   return (
-    <div className="min-h-screen bg-background">
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/failures" component={Dashboard} />
-        <Route path="/suggestions" component={Suggestions} />
-        <Route path="/approvals" component={Approvals} />
-        <Route path="/pull-requests" component={PullRequests} />
-        <Route path="/selectors" component={Selectors} />
-        <Route path="/settings" component={Settings} />
-        <Route path="/analytics" component={Analytics} />
-        <Route component={NotFound} />
-      </Switch>
+    <div className="min-h-screen bg-background flex flex-col">
+      <div className="flex-1">
+        <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/failures" component={Dashboard} />
+          <Route path="/suggestions" component={Suggestions} />
+          <Route path="/approvals" component={Approvals} />
+          <Route path="/pull-requests" component={PullRequests} />
+          <Route path="/selectors" component={Selectors} />
+          <Route path="/settings" component={Settings} />
+          <Route path="/analytics" component={Analytics} />
+          <Route component={NotFound} />
+        </Switch>
+      </div>
+      <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 py-4 px-6">
+        <div className="text-center text-sm text-muted-foreground">
+          © 2025 Made with ❤️ by Vineet.
+        </div>
+      </footer>
     </div>
   );
 }
