@@ -534,7 +534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { failureId } = req.params;
       
       // Get failure to update it with new screenshot
-      const failure = await storage.getFailureById(failureId);
+      const failure = await storage.getFailure(failureId);
       
       if (!failure) {
         return res.status(404).json({ message: "Failure not found" });
@@ -570,7 +570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { failureId } = req.params;
       
       // Get failure to check if it has a screenshot
-      const failure = await storage.getFailureById(failureId);
+      const failure = await storage.getFailure(failureId);
       
       if (!failure) {
         return res.status(404).json({ message: "Failure not found" });
