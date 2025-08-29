@@ -24,36 +24,49 @@ export class GitHubService {
    * Test GitHub API access and permissions
    */
   private async testGitHubAccess() {
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      console.log('No GitHub token provided - PR creation will be disabled');
+      return;
+    }
+    
     try {
       const { data: user } = await this.octokit.users.getAuthenticated();
-      console.log(`GitHub API connected successfully as: ${user.login}`);
+      console.log(`✅ GitHub API connected successfully as: ${user.login}`);
       
-      // Test repository access
-      try {
-        const { data: repo } = await this.octokit.repos.get({ 
-          owner: 'vineetkumar20', 
-          repo: 'autoheal-test-automation' 
-        });
-        console.log(`Repository access confirmed: ${repo.full_name}`);
-        console.log(`Default branch: ${repo.default_branch}`);
-        console.log(`Permissions: push=${repo.permissions?.push}, admin=${repo.permissions?.admin}`);
-      } catch (repoError) {
-        console.error('Repository access test failed for vineetkumar20/autoheal-test-automation:', repoError.message);
-        
-        // Try letcodewithvineet as fallback
+      // Test repository access for both possible owners
+      const repoOwners = ['letcodewithvineet', 'vineetkumar20'];
+      let repoFound = false;
+      
+      for (const owner of repoOwners) {
         try {
-          const { data: repo2 } = await this.octokit.repos.get({ 
-            owner: 'letcodewithvineet', 
+          const { data: repo } = await this.octokit.repos.get({ 
+            owner, 
             repo: 'autoheal-test-automation' 
           });
-          console.log(`Fallback repository access confirmed: ${repo2.full_name}`);
-          console.log(`Permissions: push=${repo2.permissions?.push}, admin=${repo2.permissions?.admin}`);
-        } catch (fallbackError) {
-          console.error('Fallback repository access also failed:', fallbackError.message);
+          console.log(`✅ Repository access confirmed: ${repo.full_name}`);
+          console.log(`   Default branch: ${repo.default_branch}`);
+          console.log(`   Permissions: push=${repo.permissions?.push}, admin=${repo.permissions?.admin}`);
+          
+          if (repo.permissions?.push) {
+            console.log(`✅ Write permissions confirmed for ${repo.full_name}`);
+          } else {
+            console.log(`⚠️  No write permissions for ${repo.full_name}`);
+          }
+          repoFound = true;
+          break;
+        } catch (repoError) {
+          console.log(`❌ Repository access failed for ${owner}/autoheal-test-automation: ${repoError.message}`);
         }
       }
+      
+      if (!repoFound) {
+        console.error('❌ Could not access autoheal-test-automation repository under any owner');
+      }
+      
     } catch (error) {
-      console.error('GitHub API authentication failed:', error.message);
+      console.error('❌ GitHub API authentication failed:', error.message);
+      console.log('Please verify your GitHub token has the correct permissions and scopes');
     }
   }
 
