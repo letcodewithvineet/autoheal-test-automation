@@ -183,6 +183,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const suggestions = await storage.getSuggestionsByFailureId(failure.id);
+      console.log(`Fetching failure ${req.params.id}:`);
+      console.log('- Failure found:', !!failure);
+      console.log('- Suggestions count:', suggestions.length);
+      console.log('- First suggestion candidates:', suggestions[0]?.candidates?.length || 0);
+      
       res.json({ ...failure, suggestions });
     } catch (error) {
       console.error('Error fetching failure:', error);
