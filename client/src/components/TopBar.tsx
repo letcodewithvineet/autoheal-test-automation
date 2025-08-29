@@ -62,7 +62,7 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
         <div className="flex items-center space-x-4">
           {/* Filter Controls */}
           <div className="flex items-center space-x-2">
-            <Select value={filters.repo} onValueChange={handleRepoChange}>
+            <Select value={filters.repo || "all"} onValueChange={handleRepoChange}>
               <SelectTrigger className="w-[160px]" data-testid="select-repo">
                 <SelectValue placeholder="All Repos" />
               </SelectTrigger>
@@ -74,13 +74,13 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
               </SelectContent>
             </Select>
             
-            <Select value={filters.timeframe} onValueChange={handleTimeframeChange}>
+            <Select value={filters.timeframe || "week"} onValueChange={handleTimeframeChange}>
               <SelectTrigger className="w-[140px]" data-testid="select-timeframe">
                 <SelectValue placeholder="Last 7 days" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="day">Last 24 hours</SelectItem>
                 <SelectItem value="week">Last 7 days</SelectItem>
+                <SelectItem value="day">Last 24 hours</SelectItem>
                 <SelectItem value="month">Last month</SelectItem>
               </SelectContent>
             </Select>

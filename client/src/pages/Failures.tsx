@@ -110,25 +110,25 @@ export default function Failures() {
           <div className="flex items-center space-x-4">
             {/* Filter Controls */}
             <div className="flex items-center space-x-2">
-              <Select value={filters.repo} onValueChange={(value) => setFilters({...filters, repo: value})}>
+              <Select value={filters.repo || "all"} onValueChange={(value) => setFilters({...filters, repo: value})}>
                 <SelectTrigger className="w-[160px]" data-testid="select-repo">
                   <SelectValue placeholder="All Repos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Repos</SelectItem>
+                  <SelectItem value="all">All Repos</SelectItem>
                   <SelectItem value="frontend-app">frontend-app</SelectItem>
                   <SelectItem value="api-service">api-service</SelectItem>
                   <SelectItem value="e-commerce-app">e-commerce-app</SelectItem>
                 </SelectContent>
               </Select>
               
-              <Select value={filters.timeframe} onValueChange={(value) => setFilters({...filters, timeframe: value})}>
+              <Select value={filters.timeframe || "week"} onValueChange={(value) => setFilters({...filters, timeframe: value})}>
                 <SelectTrigger className="w-[140px]" data-testid="select-timeframe">
                   <SelectValue placeholder="Last 7 days" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="day">Last 24 hours</SelectItem>
                   <SelectItem value="week">Last 7 days</SelectItem>
+                  <SelectItem value="day">Last 24 hours</SelectItem>
                   <SelectItem value="month">Last month</SelectItem>
                 </SelectContent>
               </Select>
