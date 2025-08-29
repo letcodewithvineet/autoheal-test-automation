@@ -34,6 +34,7 @@ export interface IStorage {
   getFailure(id: string): Promise<Failure | undefined>;
   createFailure(failure: InsertFailure): Promise<Failure>;
   updateFailureStatus(id: string, status: string): Promise<void>;
+  updateFailureScreenshot(id: string, screenshotPath: string): Promise<void>;
   
   // Suggestions
   getSuggestionsByFailureId(failureId: string): Promise<Suggestion[]>;
@@ -134,6 +135,10 @@ export class MongoStorage implements IStorage {
 
   async updateFailureStatus(id: string, status: string): Promise<void> {
     await FailureModel.findByIdAndUpdate(id, { status });
+  }
+
+  async updateFailureScreenshot(id: string, screenshotPath: string): Promise<void> {
+    await FailureModel.findByIdAndUpdate(id, { screenshotPath });
   }
 
   async getSuggestionsByFailureId(failureId: string): Promise<Suggestion[]> {
@@ -295,6 +300,13 @@ export class MemoryStorage implements IStorage {
     const failure = this.failures.get(id);
     if (failure) {
       this.failures.set(id, { ...failure, status });
+    }
+  }
+
+  async updateFailureScreenshot(id: string, screenshotPath: string): Promise<void> {
+    const failure = this.failures.get(id);
+    if (failure) {
+      this.failures.set(id, { ...failure, screenshotPath });
     }
   }
 
@@ -682,6 +694,7 @@ async function initializeDatabaseSampleData(dbStorage: MongoStorage): Promise<vo
     specPath: "cypress/e2e/shopping/cart.cy.ts",
     browser: "firefox",
     viewport: "1366x768",
+    screenshotPath: "/cypress/screenshots/ecommerce_add_to_cart_failure_screenshot.png",
     domHtml: `<div class="product-card">
       <h3>Wireless Headphones</h3>
       <div class="price">$99.99</div>
@@ -715,6 +728,7 @@ async function initializeDatabaseSampleData(dbStorage: MongoStorage): Promise<vo
     specPath: "cypress/e2e/dashboard/charts.cy.ts", 
     browser: "edge",
     viewport: "1440x900",
+    screenshotPath: "/cypress/screenshots/dashboard_chart_failure_screenshot.png",
     domHtml: `<div class="dashboard-stats">
       <div class="chart-container">
         <canvas id="revenue-chart"></canvas>

@@ -548,8 +548,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Simulate screenshot generation delay (in real implementation, this would trigger actual screenshot capture)
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // Update failure with new screenshot path
-      // In a real implementation, you would update the database here
+      // Update failure with new screenshot path in the database
+      await storage.updateFailureScreenshot(failureId, newScreenshotPath);
       console.log(`Generated new screenshot for failure ${failureId}: ${newFilename}`);
 
       res.json({
