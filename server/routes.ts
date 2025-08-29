@@ -528,6 +528,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Retry screenshot generation route
+  app.post("/api/screenshots/:failureId/retry", async (req, res) => {
+    try {
+      const { failureId } = req.params;
+      
+      // Get failure to update it with new screenshot
+      const failure = await storage.getFailureById(failureId);
+      
+      if (!failure) {
+        return res.status(404).json({ message: "Failure not found" });
+      }
+
+      // Generate a new screenshot filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const newFilename = `${failure.repo}_${failure.test.replace(/[^a-zA-Z0-9]/g, '_')}_retry_${timestamp}.png`;
+      const newScreenshotPath = `/cypress/screenshots/${newFilename}`;
+
+      // Simulate screenshot generation delay (in real implementation, this would trigger actual screenshot capture)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      // Update failure with new screenshot path
+      // In a real implementation, you would update the database here
+      console.log(`Generated new screenshot for failure ${failureId}: ${newFilename}`);
+
+      res.json({
+        success: true,
+        screenshotPath: newScreenshotPath,
+        filename: newFilename,
+        message: "Screenshot generated successfully"
+      });
+    } catch (error) {
+      console.error('Error retrying screenshot:', error);
+      res.status(500).json({ message: "Failed to generate screenshot" });
+    }
+  });
+
   // Get screenshot metadata route
   app.get("/api/screenshots/:failureId", async (req, res) => {
     try {

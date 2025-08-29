@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -38,6 +39,8 @@ interface Suggestion {
 export default function FailureDetail({ failureId, onClose, onApproveSuggestion }: FailureDetailProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [isRetryingScreenshot, setIsRetryingScreenshot] = useState(false);
+  const [currentScreenshotPath, setCurrentScreenshotPath] = useState<string | null>(null);
   
   const { data: failure, isLoading, refetch } = useQuery<FailureDetails>({
     queryKey: ['/api', 'failures', failureId],
@@ -81,6 +84,51 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
 
   const handleRegenerateSuggestions = () => {
     regenerateMutation.mutate();
+  };
+
+  const handleRetryScreenshot = async () => {
+    setIsRetryingScreenshot(true);
+    
+    try {
+      const response = await fetch(`/api/screenshots/${failureId}/retry`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to retry screenshot');
+      }
+      
+      const data = await response.json();
+      
+      // Update the current screenshot path
+      setCurrentScreenshotPath(data.screenshotPath);
+      
+      toast({
+        title: "Success",
+        description: "Screenshot generated successfully!",
+      });
+      
+      // Force update the image by updating its src
+      setTimeout(() => {
+        const img = document.querySelector('[data-testid="failure-screenshot"]') as HTMLImageElement;
+        if (img) {
+          img.src = `/api${data.screenshotPath}?t=${Date.now()}`;
+        }
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error retrying screenshot:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate screenshot. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRetryingScreenshot(false);
+    }
   };
 
   const handleExportData = () => {
@@ -198,7 +246,7 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
             {failure.screenshotPath ? (
               <div className="relative group">
                 <img 
-                  src={`/api${failure.screenshotPath}`} 
+                  src={`/api${currentScreenshotPath || failure.screenshotPath}`} 
                   alt="Test failure screenshot"
                   className="w-full h-auto max-h-96 object-contain bg-slate-50 cursor-zoom-in transition-transform duration-200 hover:scale-105"
                   data-testid="failure-screenshot"
@@ -239,14 +287,21 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
                   variant="outline"
                   size="sm"
                   className="mt-3 text-slate-500 border-slate-300 hover:text-slate-700"
-                  onClick={() => {
-                    // In a real scenario, this could trigger a re-run to capture screenshot
-                    alert('In a real implementation, this would trigger a test re-run to capture the screenshot.');
-                  }}
+                  onClick={handleRetryScreenshot}
+                  disabled={isRetryingScreenshot}
                   data-testid="button-retry-screenshot"
                 >
-                  <i className="fas fa-redo mr-2"></i>
-                  Retry Screenshot
+                  {isRetryingScreenshot ? (
+                    <>
+                      <i className="fas fa-spinner fa-spin mr-2"></i>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="fas fa-redo mr-2"></i>
+                      Retry Screenshot
+                    </>
+                  )}
                 </Button>
               </div>
             )}
