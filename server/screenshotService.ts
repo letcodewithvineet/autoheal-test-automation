@@ -27,11 +27,17 @@ export class ScreenshotService {
       // Launch browser with appropriate settings
       browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.CHROMIUM_PATH || '/nix/store/qa9cnw4v5xkxyip6mb9kxqfq1z4x2dx1-chromium-138.0.7204.100/bin/chromium',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
+          '--disable-features=VizDisplayCompositor',
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-extensions',
+          '--no-first-run',
+          '--no-zygote'
         ]
       });
 
@@ -161,7 +167,9 @@ export class ScreenshotService {
 
     } catch (error) {
       console.error('Error generating failure screenshot:', error);
-      throw error;
+      
+      // Fallback: generate a simple error screenshot using canvas/HTML
+      return this.generateFallbackScreenshot(failureData);
     } finally {
       if (browser) {
         await browser.close();
@@ -303,12 +311,84 @@ export class ScreenshotService {
     `;
   }
 
+  async generateFallbackScreenshot(failureData: {
+    test: string;
+    errorMessage: string;
+    domHtml: string;
+    browser: string;
+    viewport: string;
+  }): Promise<string> {
+    // Create a simple SVG-based screenshot as fallback
+    const [width, height] = failureData.viewport.split('x').map(Number);
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `fallback_${failureData.test.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.svg`;
+    const screenshotPath = `/cypress/screenshots/${filename}`;
+    const fullPath = path.join(process.cwd(), 'public', screenshotPath);
+
+    const svgContent = `
+      <svg width="${width || 1366}" height="${height || 768}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            .bg { fill: #f8fafc; }
+            .container { fill: white; stroke: #e2e8f0; stroke-width: 1; }
+            .error-box { fill: #fee2e2; stroke: #ef4444; stroke-width: 2; }
+            .error-text { font-family: Arial, sans-serif; font-size: 14px; fill: #dc2626; }
+            .info-text { font-family: Arial, sans-serif; font-size: 12px; fill: #64748b; }
+            .title-text { font-family: Arial, sans-serif; font-size: 16px; fill: #1e293b; font-weight: bold; }
+            .browser-info { fill: rgba(0,0,0,0.7); }
+            .browser-text { font-family: Arial, sans-serif; font-size: 11px; fill: white; }
+          </style>
+        </defs>
+        
+        <!-- Background -->
+        <rect width="100%" height="100%" class="bg"/>
+        
+        <!-- Browser info -->
+        <rect x="20" y="20" width="120" height="25" rx="4" class="browser-info"/>
+        <text x="25" y="37" class="browser-text">${failureData.browser} ${failureData.viewport}</text>
+        
+        <!-- Main container -->
+        <rect x="50" y="80" width="${(width || 1366) - 100}" height="200" rx="8" class="container"/>
+        
+        <!-- Error overlay -->
+        <rect x="${(width || 1366) - 420}" y="30" width="400" height="80" rx="8" class="error-box"/>
+        <text x="${(width || 1366) - 410}" y="50" class="title-text">Test Failure</text>
+        <foreignObject x="${(width || 1366) - 410}" y="55" width="380" height="50">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial; font-size: 12px; color: #dc2626; word-wrap: break-word;">
+            ${failureData.errorMessage || 'Element not found'}
+          </div>
+        </foreignObject>
+        
+        <!-- DOM representation -->
+        <text x="70" y="120" class="title-text">Failed Test: ${failureData.test}</text>
+        <rect x="70" y="140" width="${(width || 1366) - 140}" height="100" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        
+        <!-- Highlighted failed element -->
+        <rect x="100" y="170" width="150" height="40" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="3"/>
+        <text x="105" y="185" class="error-text">Failed Element</text>
+        <text x="105" y="200" class="info-text">Selector not found</text>
+        
+        <!-- Status -->
+        <text x="70" y="${(height || 768) - 40}" class="info-text">Screenshot generated: ${new Date().toLocaleString()}</text>
+        <text x="70" y="${(height || 768) - 20}" class="info-text">Note: Real-time screenshot unavailable - showing test failure representation</text>
+      </svg>
+    `;
+
+    // Ensure directory exists
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
+    
+    // Write SVG file
+    await fs.writeFile(fullPath, svgContent);
+
+    return screenshotPath;
+  }
+
   async cleanup(): Promise<void> {
     // Clean up old screenshots (keep only last 50)
     try {
       const screenshotDir = path.join(process.cwd(), 'public', 'cypress', 'screenshots');
       const files = await fs.readdir(screenshotDir);
-      const pngFiles = files.filter(f => f.endsWith('.png')).sort();
+      const pngFiles = files.filter(f => f.endsWith('.png') || f.endsWith('.svg')).sort();
       
       if (pngFiles.length > 50) {
         const filesToDelete = pngFiles.slice(0, pngFiles.length - 50);
