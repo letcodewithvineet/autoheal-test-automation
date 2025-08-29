@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/shopping/cart.cy.ts": {
+    "product-add-btn": "[data-testid=\"add-to-cart\"]"
+  }
+}
