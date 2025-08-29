@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import SuggestionCard from "@/components/SuggestionCard";
+import { ScreenshotDialog } from "@/components/ScreenshotDialog";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -41,6 +42,7 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
   const { toast } = useToast();
   const [isRetryingScreenshot, setIsRetryingScreenshot] = useState(false);
   const [currentScreenshotPath, setCurrentScreenshotPath] = useState<string | null>(null);
+  const [screenshotDialogOpen, setScreenshotDialogOpen] = useState(false);
   
   const { data: failure, isLoading, refetch } = useQuery<FailureDetails>({
     queryKey: ['/api', 'failures', failureId],
@@ -111,11 +113,15 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
         description: "Screenshot generated successfully!",
       });
       
-      // Force update the image by updating its src
+      // Force update the image by updating its src (both preview and dialog)
       setTimeout(() => {
         const img = document.querySelector('[data-testid="failure-screenshot"]') as HTMLImageElement;
         if (img) {
           img.src = `/api${data.screenshotPath}?t=${Date.now()}`;
+        }
+        const dialogImg = document.querySelector('[data-testid="img-screenshot-fullsize"]') as HTMLImageElement;
+        if (dialogImg) {
+          dialogImg.src = `/api${data.screenshotPath}?t=${Date.now()}`;
         }
       }, 100);
       
@@ -200,7 +206,7 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-6">
-        {/* Enhanced Screenshot Section */}
+        {/* Screenshot Section */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h4 className="font-semibold text-slate-800 flex items-center" data-testid="screenshot-section-title">
@@ -208,47 +214,24 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
               Screenshot at Failure
             </h4>
             {failure.screenshotPath && (
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-slate-500 hover:text-slate-700 p-2"
-                  onClick={() => {
-                    const img = document.querySelector('[data-testid="failure-screenshot"]') as HTMLImageElement;
-                    if (img) {
-                      if (document.fullscreenElement) {
-                        document.exitFullscreen();
-                      } else {
-                        img.requestFullscreen();
-                      }
-                    }
-                  }}
-                  data-testid="button-fullscreen"
-                >
-                  <i className="fas fa-expand text-sm"></i>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-slate-500 hover:text-slate-700 p-2"
-                  onClick={() => {
-                    const url = `/api${failure.screenshotPath}`;
-                    window.open(url, '_blank');
-                  }}
-                  data-testid="button-open-new-tab"
-                >
-                  <i className="fas fa-external-link-alt text-sm"></i>
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-slate-500 hover:text-slate-700 p-2"
+                onClick={() => setScreenshotDialogOpen(true)}
+                data-testid="button-maximize-screenshot"
+              >
+                <i className="fas fa-expand text-sm"></i>
+              </Button>
             )}
           </div>
           <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
             {failure.screenshotPath ? (
-              <div className="relative group">
+              <div className="relative group cursor-pointer" onClick={() => setScreenshotDialogOpen(true)}>
                 <img 
                   src={`/api${currentScreenshotPath || failure.screenshotPath}`} 
                   alt="Test failure screenshot"
-                  className="w-full h-auto max-h-96 object-contain bg-slate-50 cursor-zoom-in transition-transform duration-200 hover:scale-105"
+                  className="w-full h-auto max-h-96 object-contain bg-slate-50 transition-transform duration-200 hover:scale-105"
                   data-testid="failure-screenshot"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
@@ -256,16 +239,6 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
                     const parent = target.parentElement;
                     if (parent) {
                       parent.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50"><i class="fas fa-exclamation-triangle text-3xl mb-2 text-amber-500"></i><p>Screenshot failed to load</p><p class="text-sm mt-1">The screenshot may have been moved or corrupted</p></div>';
-                    }
-                  }}
-                  onClick={() => {
-                    const img = document.querySelector('[data-testid="failure-screenshot"]') as HTMLImageElement;
-                    if (img) {
-                      if (document.fullscreenElement) {
-                        document.exitFullscreen();
-                      } else {
-                        img.requestFullscreen();
-                      }
                     }
                   }}
                 />
@@ -310,7 +283,7 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
             <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
               <span data-testid="screenshot-info">
                 <i className="fas fa-info-circle mr-1"></i>
-                Click to view fullscreen • Right-click to save
+                Click to enlarge screenshot
               </span>
               <span className="text-slate-400">
                 {new Date().toLocaleString()}
@@ -424,6 +397,17 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
           </div>
         </div>
       </div>
+
+      {/* Screenshot Dialog */}
+      <ScreenshotDialog
+        open={screenshotDialogOpen}
+        onOpenChange={setScreenshotDialogOpen}
+        screenshotPath={currentScreenshotPath || failure.screenshotPath}
+        failureId={failureId}
+        testName={failure.test}
+        onRetryScreenshot={handleRetryScreenshot}
+        isRetrying={isRetryingScreenshot}
+      />
     </div>
   );
 }
