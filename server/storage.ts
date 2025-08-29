@@ -420,7 +420,7 @@ const initializeSampleData = async () => {
   // Sample failure 1 - Login test
   const failure1 = await memoryStorage.createFailure({
     runId: "run-001",
-    repo: "acme-corp/web-app",
+    repo: "letcodewithvineet/autoheal-test-automation",
     branch: "main",
     commit: "abc123",
     suite: "Authentication Tests",

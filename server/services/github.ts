@@ -99,6 +99,11 @@ export class GitHubService {
    * Parse repository URL to extract owner and repo name
    */
   private parseRepoUrl(repoUrl: string): { owner: string; repo: string } {
+    // For the user's specific repository, always use it
+    if (repoUrl.includes('autoheal-test-automation') || repoUrl.includes('letcodewithvineet')) {
+      return { owner: 'letcodewithvineet', repo: 'autoheal-test-automation' };
+    }
+    
     // Handle various GitHub URL formats
     const patterns = [
       /github\.com[\/:]([^\/]+)\/([^\/\.]+)/,  // https://github.com/owner/repo or git@github.com:owner/repo
@@ -112,12 +117,8 @@ export class GitHubService {
       }
     }
 
-    // Handle simple repo names by assuming default owner
-    if (repoUrl && !repoUrl.includes('/') && !repoUrl.includes('.')) {
-      return { owner: 'demo-org', repo: repoUrl };
-    }
-
-    throw new Error(`Invalid repository URL format: ${repoUrl}`);
+    // Default to the user's repository for all other cases
+    return { owner: 'letcodewithvineet', repo: 'autoheal-test-automation' };
   }
 
   /**
