@@ -152,35 +152,116 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
       </div>
 
       <div className="flex-1 overflow-auto p-6 space-y-6">
-        {/* Screenshot Section */}
+        {/* Enhanced Screenshot Section */}
         <div>
-          <h4 className="font-semibold text-slate-800 mb-3" data-testid="screenshot-section-title">Screenshot at Failure</h4>
-          <div className="border border-slate-200 rounded-lg overflow-hidden">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-slate-800 flex items-center" data-testid="screenshot-section-title">
+              <i className="fas fa-camera mr-2 text-blue-600"></i>
+              Screenshot at Failure
+            </h4>
+            {failure.screenshotPath && (
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-500 hover:text-slate-700 p-2"
+                  onClick={() => {
+                    const img = document.querySelector('[data-testid="failure-screenshot"]') as HTMLImageElement;
+                    if (img) {
+                      if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                      } else {
+                        img.requestFullscreen();
+                      }
+                    }
+                  }}
+                  data-testid="button-fullscreen"
+                >
+                  <i className="fas fa-expand text-sm"></i>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-500 hover:text-slate-700 p-2"
+                  onClick={() => {
+                    const url = `/api${failure.screenshotPath}`;
+                    window.open(url, '_blank');
+                  }}
+                  data-testid="button-open-new-tab"
+                >
+                  <i className="fas fa-external-link-alt text-sm"></i>
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
             {failure.screenshotPath ? (
-              <div className="relative">
+              <div className="relative group">
                 <img 
                   src={`/api${failure.screenshotPath}`} 
                   alt="Test failure screenshot"
-                  className="w-full h-auto max-h-96 object-contain bg-slate-50"
+                  className="w-full h-auto max-h-96 object-contain bg-slate-50 cursor-zoom-in transition-transform duration-200 hover:scale-105"
                   data-testid="failure-screenshot"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement;
                     target.style.display = 'none';
                     const parent = target.parentElement;
                     if (parent) {
-                      parent.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50"><i class="fas fa-image text-3xl mb-2"></i><p>Screenshot not available</p><p class="text-sm mt-1">Unable to load failure screenshot</p></div>';
+                      parent.innerHTML = '<div class="p-8 text-center text-slate-500 bg-slate-50"><i class="fas fa-exclamation-triangle text-3xl mb-2 text-amber-500"></i><p>Screenshot failed to load</p><p class="text-sm mt-1">The screenshot may have been moved or corrupted</p></div>';
+                    }
+                  }}
+                  onClick={() => {
+                    const img = document.querySelector('[data-testid="failure-screenshot"]') as HTMLImageElement;
+                    if (img) {
+                      if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                      } else {
+                        img.requestFullscreen();
+                      }
                     }
                   }}
                 />
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <div className="bg-white bg-opacity-90 rounded-full p-2 shadow-lg">
+                    <i className="fas fa-search-plus text-slate-600"></i>
+                  </div>
+                </div>
+                <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded backdrop-blur">
+                  {failure.browser} {failure.viewport}
+                </div>
               </div>
             ) : (
               <div className="p-8 text-center text-slate-500 bg-slate-50">
-                <i className="fas fa-image text-3xl mb-2"></i>
-                <p>No screenshot available for this failure</p>
+                <i className="fas fa-camera-retro text-4xl mb-3 text-slate-400"></i>
+                <p className="font-medium">No screenshot available for this failure</p>
                 <p className="text-sm mt-1">Screenshots are captured automatically when tests fail</p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 text-slate-500 border-slate-300 hover:text-slate-700"
+                  onClick={() => {
+                    // In a real scenario, this could trigger a re-run to capture screenshot
+                    alert('In a real implementation, this would trigger a test re-run to capture the screenshot.');
+                  }}
+                  data-testid="button-retry-screenshot"
+                >
+                  <i className="fas fa-redo mr-2"></i>
+                  Retry Screenshot
+                </Button>
               </div>
             )}
           </div>
+          {failure.screenshotPath && (
+            <div className="mt-2 text-xs text-slate-500 flex items-center justify-between">
+              <span data-testid="screenshot-info">
+                <i className="fas fa-info-circle mr-1"></i>
+                Click to view fullscreen • Right-click to save
+              </span>
+              <span className="text-slate-400">
+                {new Date().toLocaleString()}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* AI Suggestions Section */}

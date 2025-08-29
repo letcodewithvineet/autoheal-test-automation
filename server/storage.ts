@@ -582,6 +582,63 @@ async function initializeDatabaseSampleData(dbStorage: MongoStorage): Promise<vo
   console.log("Initializing sample data in database...");
 
   // Create 12 sample failures for comprehensive demo
+  // First failure: Real scenario from legacytouch.com
+  const legacytouchFailure = await dbStorage.createFailure({
+    runId: "run-legacytouch-001",
+    repo: "legacytouch-automation",
+    branch: "main",
+    commit: "lt1a2b3c",
+    suite: "login",
+    test: "invalid login credentials scenario",
+    specPath: "cypress/e2e/legacytouch/login-invalid.cy.ts",
+    browser: "chrome",
+    viewport: "1920x1080",
+    screenshotPath: "/cypress/screenshots/legacytouch_login_failure_invalid_credentials.png",
+    domHtml: `<div class="login-container">
+      <div class="login-form-wrapper">
+        <form class="login-form" id="customer_login">
+          <h3 class="form-title">Sign In</h3>
+          <div class="form-field">
+            <label for="customer_email">Email</label>
+            <input type="email" name="customer[email]" id="customer_email" class="form-input" autocomplete="email" value="invalid@test.com">
+          </div>
+          <div class="form-field">
+            <label for="customer_password">Password</label>
+            <input type="password" name="customer[password]" id="customer_password" class="form-input" autocomplete="current-password">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" data-gtm-target-element="login-submit">Sign In</button>
+            <a href="/account/register" class="link-secondary">Create Account</a>
+          </div>
+          <div class="error-message visible">
+            <p class="error-text">Incorrect email or password.</p>
+          </div>
+        </form>
+      </div>
+    </div>`,
+    consoleLogs: [
+      { level: "error", message: "Login failed: Invalid credentials provided", timestamp: Date.now() },
+      { level: "warn", message: "Element interaction timeout after 10s", timestamp: Date.now() - 1000 }
+    ],
+    networkLogs: [
+      { method: "GET", url: "https://legacytouch.com/", status: 200, timestamp: Date.now() - 15000 },
+      { method: "GET", url: "https://legacytouch.com/account/login", status: 200, timestamp: Date.now() - 10000 },
+      { method: "POST", url: "https://legacytouch.com/account/login", status: 422, timestamp: Date.now() - 2000 }
+    ],
+    currentSelector: "[data-gtm-target-element='my-account']",
+    selectorContext: {
+      element: "button",
+      text: "Sign In",
+      className: "btn btn-primary",
+      dataAttributes: { "data-gtm-target-element": "login-submit" },
+      position: { x: 450, y: 380 },
+      screenshot: true,
+      errorVisible: true
+    },
+    errorMessage: "Test failed: Expected to navigate to account dashboard but remained on login page due to invalid credentials. Error message displayed: 'Incorrect email or password.'",
+    status: "new"
+  });
+
   const failure1 = await dbStorage.createFailure({
     runId: "run-001-login-test",
     repo: "frontend-app",
@@ -680,6 +737,42 @@ async function initializeDatabaseSampleData(dbStorage: MongoStorage): Promise<vo
   });
 
   // Create sample suggestions
+  // First, create suggestions for the legacytouch failure
+  await dbStorage.createSuggestion({
+    failureId: legacytouchFailure.id,
+    candidates: [
+      {
+        selector: "[data-testid='button-account-dashboard']",
+        type: "data-testid",
+        rationale: "Uses data-testid for reliable targeting of account navigation element",
+        confidence: 0.94,
+        source: "heuristic"
+      },
+      {
+        selector: "#customer_login button[type='submit']",
+        type: "form-submit",
+        rationale: "Targets the submit button within the specific login form",
+        confidence: 0.89,
+        source: "ai"
+      },
+      {
+        selector: "button[data-gtm-target-element='login-submit']",
+        type: "data-attribute",
+        rationale: "Uses existing GTM data attribute for button identification",
+        confidence: 0.85,
+        source: "ai"
+      },
+      {
+        selector: ".btn.btn-primary:contains('Sign In')",
+        type: "class+text",
+        rationale: "Combines button classes with text content for specificity",
+        confidence: 0.72,
+        source: "ai"
+      }
+    ],
+    topChoice: "[data-testid='button-account-dashboard']"
+  });
+
   await dbStorage.createSuggestion({
     failureId: failure1.id,
     candidates: [
