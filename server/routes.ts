@@ -5,6 +5,7 @@ import { z } from "zod";
 import { insertFailureSchema, insertUserSchema } from "@shared/schemas-mongo";
 import { aiAdvisor } from "./services/aiAdvisor";
 import { githubService } from "./services/github";
+import { ScreenshotService } from "./screenshotService";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import MemoryStore from "memorystore";
@@ -540,17 +541,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Failure not found" });
       }
 
-      // Generate a new screenshot filename with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const newFilename = `${failure.repo}_${failure.test.replace(/[^a-zA-Z0-9]/g, '_')}_retry_${timestamp}.png`;
-      const newScreenshotPath = `/cypress/screenshots/${newFilename}`;
-
-      // Simulate screenshot generation delay (in real implementation, this would trigger actual screenshot capture)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Generate real screenshot using screenshot service
+      const screenshotService = ScreenshotService.getInstance();
+      
+      const newScreenshotPath = await screenshotService.generateFailureScreenshot({
+        test: failure.test,
+        errorMessage: failure.errorMessage || 'Test failed due to selector issue',
+        domHtml: failure.domHtml || '<div>No DOM context available</div>',
+        browser: failure.browser || 'chrome',
+        viewport: failure.viewport || '1366x768',
+        currentSelector: failure.currentSelector || '',
+        selectorContext: failure.selectorContext
+      });
 
       // Update failure with new screenshot path in the database
       await storage.updateFailureScreenshot(failureId, newScreenshotPath);
-      console.log(`Generated new screenshot for failure ${failureId}: ${newFilename}`);
+      console.log(`Generated real screenshot for failure ${failureId}: ${newScreenshotPath}`);
 
       res.json({
         success: true,
