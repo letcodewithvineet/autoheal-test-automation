@@ -13,7 +13,7 @@ export class GitHubService {
 
   constructor(token?: string) {
     this.octokit = new Octokit({
-      auth: token || process.env.GITHUB_TOKEN,
+      auth: token || process.env.AUTOHEALTOKEN || process.env.GITHUB_TOKEN,
     });
     
     // Test GitHub API access on initialization
@@ -24,11 +24,13 @@ export class GitHubService {
    * Test GitHub API access and permissions
    */
   private async testGitHubAccess() {
-    const token = process.env.GITHUB_TOKEN;
+    const token = process.env.AUTOHEALTOKEN || process.env.GITHUB_TOKEN;
     if (!token) {
       console.log('No GitHub token provided - PR creation will be disabled');
       return;
     }
+    
+    console.log('🔑 Using GitHub token:', token ? `${token.substring(0, 8)}...${token.substring(token.length - 4)}` : 'none');
     
     try {
       const { data: user } = await this.octokit.users.getAuthenticated();
