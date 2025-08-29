@@ -44,15 +44,7 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
     enabled: !!failureId,
     staleTime: 0, // Always consider data stale for immediate refetch
     refetchOnMount: true,
-    onSuccess: (data) => {
-      console.log('✅ Failure data loaded successfully');
-      console.log('📊 Full response:', data);
-      console.log('🤖 Suggestions array:', data?.suggestions);
-      console.log('🎯 First suggestion candidates:', data?.suggestions?.[0]?.candidates);
-    },
-    onError: (error) => {
-      console.error('Failed to load failure:', error);
-    }
+    // Removed debug logging - system is working properly
   });
 
   const regenerateMutation = useMutation({
@@ -199,43 +191,33 @@ export default function FailureDetail({ failureId, onClose, onApproveSuggestion 
           </h4>
           
           <div className="space-y-3">
-            {(() => {
-              console.log('Rendering suggestions section');
-              console.log('failure.suggestions:', failure.suggestions);
-              console.log('First suggestion candidates:', failure.suggestions?.[0]?.candidates);
-              
-              if (failure.suggestions && failure.suggestions.length > 0 && failure.suggestions[0]?.candidates?.length > 0) {
-                return failure.suggestions[0].candidates.slice(0, 3).map((candidate, index) => (
-                  <SuggestionCard
-                    key={`${candidate.selector}-${index}`}
-                    suggestion={candidate}
-                    rank={index}
-                    onApprove={(customSelector) => {
-                      const suggestionData = { ...candidate, suggestionId: failure.suggestions[0].id };
-                      if (customSelector) {
-                        suggestionData.selector = customSelector;
-                        suggestionData.source = 'custom';
-                        suggestionData.rationale = `Custom selector: ${customSelector}`;
-                      }
-                      onApproveSuggestion(suggestionData);
-                    }}
-                    data-testid={`suggestion-card-${index}`}
-                  />
-                ));
-              } else {
-                return (
-                  <div className="space-y-3">
-                    <Card className="border-slate-200">
-                      <CardContent className="p-4 text-center text-slate-500">
-                        <i className="fas fa-clock text-2xl mb-2"></i>
-                        <p>No suggestions available yet</p>
-                        <p className="text-xs mt-1">Click "Regenerate" to generate AI suggestions</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                );
-              }
-            })()}
+            {failure.suggestions && failure.suggestions.length > 0 && failure.suggestions[0]?.candidates?.length > 0 ? (
+              failure.suggestions[0].candidates.slice(0, 3).map((candidate, index) => (
+                <SuggestionCard
+                  key={`${candidate.selector}-${index}`}
+                  suggestion={candidate}
+                  rank={index}
+                  onApprove={(customSelector) => {
+                    const suggestionData = { ...candidate, suggestionId: failure.suggestions[0].id };
+                    if (customSelector) {
+                      suggestionData.selector = customSelector;
+                      suggestionData.source = 'custom';
+                      suggestionData.rationale = `Custom selector: ${customSelector}`;
+                    }
+                    onApproveSuggestion(suggestionData);
+                  }}
+                  data-testid={`suggestion-card-${index}`}
+                />
+              ))
+            ) : (
+              <Card className="border-slate-200">
+                <CardContent className="p-4 text-center text-slate-500">
+                  <i className="fas fa-clock text-2xl mb-2"></i>
+                  <p>No suggestions available yet</p>
+                  <p className="text-xs mt-1">Click "Regenerate" to generate AI suggestions</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 

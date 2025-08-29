@@ -183,11 +183,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const suggestions = await storage.getSuggestionsByFailureId(failure.id);
-      console.log(`Fetching failure ${req.params.id}:`);
-      console.log('- Failure found:', !!failure);
-      console.log('- Suggestions count:', suggestions.length);
-      console.log('- First suggestion candidates:', suggestions[0]?.candidates?.length || 0);
-      
       res.json({ ...failure, suggestions });
     } catch (error) {
       console.error('Error fetching failure:', error);
@@ -483,9 +478,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Object.entries(filters).filter(([_, value]) => value !== undefined)
       );
       
-      const pullRequests = await storage.getPullRequests(cleanFilters);
-      res.json(pullRequests);
+      // Get only real PRs that have been created in GitHub (have prNumber and prUrl)
+      const allPullRequests = await storage.getPullRequests(cleanFilters);
+      const realPullRequests = allPullRequests.filter(pr => 
+        pr.prNumber && 
+        pr.prUrl && 
+        pr.status === 'open' // Only show active PRs
+      );
+      
+      console.log(`Fetched ${allPullRequests.length} total PRs, ${realPullRequests.length} are real/active`);
+      
+      res.json(realPullRequests);
     } catch (error) {
+      console.error('Error fetching pull requests:', error);
       res.status(500).json({ message: "Failed to fetch pull requests" });
     }
   });

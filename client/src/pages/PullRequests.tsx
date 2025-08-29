@@ -28,12 +28,19 @@ export default function PullRequests() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'creating': return 'bg-yellow-100 text-yellow-700';
-      case 'created': return 'bg-blue-100 text-blue-700';
-      case 'merged': return 'bg-green-100 text-green-700';
-      case 'closed': return 'bg-red-100 text-red-700';
-      case 'failed': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'open': return 'bg-green-100 text-green-800 border-green-200';
+      case 'merged': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'closed': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+    }
+  };
+  
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'open': return 'fa-code-branch';
+      case 'merged': return 'fa-check-circle';
+      case 'closed': return 'fa-times-circle';
+      default: return 'fa-question-circle';
     }
   };
 
@@ -57,10 +64,16 @@ export default function PullRequests() {
     <DashboardLayout>
       <div className="p-6" data-testid="pull-requests-page">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Pull Requests</h2>
-        <Badge variant="secondary" data-testid="pr-count">
-          {pullRequests.length} PRs
-        </Badge>
+        <div className="flex items-center space-x-3">
+          <h2 className="text-2xl font-bold text-slate-800">Active Pull Requests</h2>
+          <i className="fas fa-sync text-slate-400 text-sm" title="Real-time GitHub PRs"></i>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Badge variant="secondary" data-testid="pr-count">
+            <i className="fas fa-code-branch mr-1"></i>
+            {pullRequests.length} Active PRs
+          </Badge>
+        </div>
       </div>
 
       <div className="grid gap-4">
@@ -76,8 +89,9 @@ export default function PullRequests() {
                     </Badge>
                   )}
                 </div>
-                <Badge className={getStatusColor(pr.status)} data-testid={`pr-status-${pr.status}`}>
-                  {pr.status}
+                <Badge className={`${getStatusColor(pr.status)} border`} data-testid={`pr-status-${pr.status}`}>
+                  <i className={`fas ${getStatusIcon(pr.status)} mr-1`}></i>
+                  {pr.status.toUpperCase()}
                 </Badge>
               </div>
               <div className="flex items-center space-x-4 text-sm text-slate-500">
@@ -109,16 +123,21 @@ export default function PullRequests() {
                   
                   <div className="flex space-x-2">
                     {pr.prUrl && (
-                      <Button size="sm" variant="outline" data-testid={`view-pr-${pr.id}`}>
-                        <i className="fas fa-external-link-alt mr-2"></i>
-                        View PR
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        data-testid={`view-pr-${pr.id}`}
+                        onClick={() => window.open(pr.prUrl, '_blank')}
+                        className="hover:bg-blue-50 border-blue-200 text-blue-700"
+                      >
+                        <i className="fab fa-github mr-2"></i>
+                        View on GitHub
                       </Button>
                     )}
-                    {pr.status === 'created' && (
-                      <Button size="sm" className="bg-green-600 hover:bg-green-700" data-testid={`merge-pr-${pr.id}`}>
-                        <i className="fas fa-code-branch mr-2"></i>
-                        Merge
-                      </Button>
+                    {pr.prNumber && (
+                      <Badge variant="outline" className="text-slate-600">
+                        PR #{pr.prNumber}
+                      </Badge>
                     )}
                   </div>
                 </div>
@@ -128,11 +147,15 @@ export default function PullRequests() {
         ))}
         
         {pullRequests.length === 0 && (
-          <Card className="text-center py-12">
+          <Card className="text-center py-12 border-dashed border-2 border-slate-200">
             <CardContent>
-              <i className="fas fa-code-branch text-4xl text-slate-300 mb-4"></i>
-              <h3 className="text-lg font-medium text-slate-600 mb-2">No pull requests yet</h3>
-              <p className="text-slate-500">Approved suggestions will automatically create pull requests</p>
+              <i className="fab fa-github text-4xl text-slate-300 mb-4"></i>
+              <h3 className="text-lg font-medium text-slate-600 mb-2">No active pull requests</h3>
+              <p className="text-slate-500 mb-4">Pull requests will appear here when you approve AI suggestions</p>
+              <div className="text-sm text-slate-400">
+                <i className="fas fa-lightbulb mr-1"></i>
+                Tip: Go to Failures → View Details → Approve suggestion to create a PR
+              </div>
             </CardContent>
           </Card>
         )}
