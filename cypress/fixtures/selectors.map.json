@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/checkout/payment.cy.ts": {
+    "payment-submit-button": "[data-testid='payment-submit-btn']"
+  }
+}
