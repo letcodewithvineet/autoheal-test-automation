@@ -1,5 +1,5 @@
 import { Octokit } from "@octokit/rest";
-import type { Approval, Suggestion, Failure } from "@shared/schema";
+import type { Approval, Suggestion, Failure } from "@shared/schemas-mongo";
 
 export interface PRCreationResult {
   success: boolean;

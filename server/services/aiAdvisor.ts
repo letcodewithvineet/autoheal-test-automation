@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { Failure } from "@shared/schema";
+import type { Failure } from "@shared/schemas-mongo";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
 // Initialize OpenAI client only if API key is provided (for demo mode compatibility)
