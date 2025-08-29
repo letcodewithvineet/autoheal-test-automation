@@ -87,7 +87,7 @@ export default function LoginForm() {
       <div className="flex-1 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">AutoHeal Dashboard</CardTitle>
+            <CardTitle className="text-2xl font-bold">AutoHeal - Self-Healing Test Automation System</CardTitle>
             <CardDescription>
               Self-healing test automation platform
             </CardDescription>
