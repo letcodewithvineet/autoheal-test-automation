@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/navigation/header.cy.ts": {
+    "hamburger-menu": "[data-testid='menu-toggle-btn']"
+  }
+}
