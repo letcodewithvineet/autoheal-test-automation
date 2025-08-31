@@ -507,6 +507,55 @@ const initializeSampleData = async () => {
     errorMessage: "AssertionError: Timed out retrying after 4000ms: Expected to find element: .revenue-chart, but never found it."
   });
 
+  // Sample failure 4 - LegacyTouch Login 
+  const failure4 = await memoryStorage.createFailure({
+    runId: "run-legacytouch-001",
+    repo: "letcodewithvineet/legacytouch-e2e-tests",
+    branch: "main",
+    commit: "def456",
+    suite: "Authentication Tests", 
+    test: "should login with incorrect credentials and show error message",
+    specPath: "cypress/e2e/legacytouch-auth.cy.ts",
+    browser: "chrome",
+    viewport: "1280x720",
+    screenshotPath: "/screenshots/legacytouch-login-failure.svg",
+    screenshotGridfsId: null,
+    domHtml: `<div class="login-container">
+      <form class="login-form" action="/account/login" method="post">
+        <h2>Sign In</h2>
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="invalid@test.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" value="wrongpassword" required>
+        </div>
+        <button type="submit" class="login-btn">Sign In</button>
+        <div class="error-message" style="display: block; color: red;">
+          Invalid email or password. Please try again.
+        </div>
+      </form>
+    </div>`,
+    consoleLogs: [
+      { level: "error", message: "Login failed: Invalid credentials" },
+      { level: "error", message: "Element not found: #login-success-message" },
+      { level: "info", message: "Form submitted with email: invalid@test.com" }
+    ],
+    networkLogs: [
+      { url: "/account/login", status: 401, method: "POST" },
+      { url: "/api/user/profile", status: 401, method: "GET" }
+    ],
+    currentSelector: "#login-success-message",
+    selectorContext: {
+      element: "div",
+      text: "Login successful",
+      attributes: { id: "login-success-message", class: "success-alert" },
+      xpath: "/html/body/div[1]/main/div[2]/div[1]"
+    },
+    errorMessage: "AssertionError: Timed out retrying after 4000ms: Expected to find element: #login-success-message, but never found it."
+  });
+
   // Create suggestions for failures
   await memoryStorage.createSuggestion({
     failureId: failure1.id,
@@ -569,6 +618,34 @@ const initializeSampleData = async () => {
       }
     ],
     topChoice: "[role='img'][aria-label='Revenue Chart']"
+  });
+
+  await memoryStorage.createSuggestion({
+    failureId: failure4.id,
+    candidates: [
+      {
+        selector: "[data-testid='login-success-alert']",
+        type: "data-testid",
+        rationale: "Adding a data-testid to the success message element would make it easily testable",
+        confidence: 0.95,
+        source: "heuristic"
+      },
+      {
+        selector: ".success-alert:contains('Login successful')",
+        type: "class+text",
+        rationale: "Targets success alert by class and text content",
+        confidence: 0.82,
+        source: "ai"
+      },
+      {
+        selector: "#login-success-message",
+        type: "id",
+        rationale: "Direct ID selector - most specific but element needs to exist first",
+        confidence: 0.78,
+        source: "ai"
+      }
+    ],
+    topChoice: "[data-testid='login-success-alert']"
   });
 
   // Update some statuses

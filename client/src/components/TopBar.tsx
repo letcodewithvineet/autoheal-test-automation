@@ -8,9 +8,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth, useLogout } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { LogOut, User, Plus } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { LogOut, User } from "lucide-react";
 
 interface TopBarProps {
   filters: {
@@ -24,26 +22,6 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
   const { user } = useAuth();
   const logout = useLogout();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  // Mutation for creating legacytouch.com failure scenario
-  const createLegacytouchFailure = useMutation({
-    mutationFn: () => apiRequest('/api/create-legacytouch-failure', { method: 'POST' }),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/failures'] });
-      toast({
-        title: "Success",
-        description: "LegacyTouch.com failure scenario created successfully! Check the failures list.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create legacytouch.com failure scenario",
-        variant: "destructive",
-      });
-    }
-  });
 
   const handleRepoChange = (value: string) => {
     onFiltersChange({ ...filters, repo: value });
@@ -108,17 +86,6 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
             </Select>
           </div>
           
-          {/* Create LegacyTouch Scenario Button */}
-          <Button 
-            onClick={() => createLegacytouchFailure.mutate()}
-            disabled={createLegacytouchFailure.isPending}
-            className="bg-green-600 hover:bg-green-700 text-white"
-            data-testid="button-create-legacytouch"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {createLegacytouchFailure.isPending ? 'Creating...' : 'Add LegacyTouch Login'}
-          </Button>
-
           {/* Refresh Button */}
           <Button 
             onClick={handleRefresh}
