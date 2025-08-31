@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,15 +31,24 @@ export default function Suggestions() {
     queryKey: ['/api/suggestions'],
   });
 
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
   const approveMutation = useMutation({
-    mutationFn: (suggestionId: string) => 
-      apiRequest('POST', '/api/approvals', {
+    mutationFn: (suggestionId: string) => {
+      setProcessingIds(prev => new Set(prev).add(suggestionId));
+      return apiRequest('POST', '/api/approvals', {
         suggestionId,
         decision: 'approve',
         approvedBy: 'current-user',
         notes: 'Approved from suggestions page'
-      }),
-    onSuccess: () => {
+      });
+    },
+    onSuccess: (_, suggestionId) => {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestionId);
+        return newSet;
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/suggestions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/approvals'] });
       queryClient.invalidateQueries({ queryKey: ['/api/pull-requests'] });
@@ -47,7 +57,12 @@ export default function Suggestions() {
         description: 'Suggestion approved and PR created!',
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, suggestionId) => {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestionId);
+        return newSet;
+      });
       toast({
         title: 'Error',
         description: error.message || 'Failed to approve suggestion',
@@ -57,14 +72,21 @@ export default function Suggestions() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (suggestionId: string) => 
-      apiRequest('POST', '/api/approvals', {
+    mutationFn: (suggestionId: string) => {
+      setProcessingIds(prev => new Set(prev).add(suggestionId));
+      return apiRequest('POST', '/api/approvals', {
         suggestionId,
         decision: 'reject',
         approvedBy: 'current-user',
         notes: 'Rejected from suggestions page'
-      }),
-    onSuccess: () => {
+      });
+    },
+    onSuccess: (_, suggestionId) => {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestionId);
+        return newSet;
+      });
       queryClient.invalidateQueries({ queryKey: ['/api/suggestions'] });
       queryClient.invalidateQueries({ queryKey: ['/api/approvals'] });
       toast({
@@ -72,7 +94,12 @@ export default function Suggestions() {
         description: 'Suggestion rejected',
       });
     },
-    onError: (error: any) => {
+    onError: (error: any, suggestionId) => {
+      setProcessingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(suggestionId);
+        return newSet;
+      });
       toast({
         title: 'Error',
         description: error.message || 'Failed to reject suggestion',
@@ -154,20 +181,20 @@ export default function Suggestions() {
                   className="bg-green-600 hover:bg-green-700" 
                   data-testid={`approve-${suggestion.id}`}
                   onClick={() => handleApprove(suggestion.id)}
-                  disabled={approveMutation.isPending}
+                  disabled={processingIds.has(suggestion.id)}
                 >
                   <i className="fas fa-check mr-2"></i>
-                  {approveMutation.isPending ? 'Approving...' : 'Approve'}
+                  {processingIds.has(suggestion.id) ? 'Approving...' : 'Approve'}
                 </Button>
                 <Button 
                   size="sm" 
                   variant="outline" 
                   data-testid={`reject-${suggestion.id}`}
                   onClick={() => handleReject(suggestion.id)}
-                  disabled={rejectMutation.isPending}
+                  disabled={processingIds.has(suggestion.id)}
                 >
                   <i className="fas fa-times mr-2"></i>
-                  {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
+                  {processingIds.has(suggestion.id) ? 'Rejecting...' : 'Reject'}
                 </Button>
               </div>
             </CardContent>
