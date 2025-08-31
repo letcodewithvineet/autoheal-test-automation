@@ -1,0 +1,48 @@
+
+      <svg width="1366" height="768" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            .bg { fill: #f8fafc; }
+            .container { fill: white; stroke: #e2e8f0; stroke-width: 1; }
+            .error-box { fill: #fee2e2; stroke: #ef4444; stroke-width: 2; }
+            .error-text { font-family: Arial, sans-serif; font-size: 14px; fill: #dc2626; }
+            .info-text { font-family: Arial, sans-serif; font-size: 12px; fill: #64748b; }
+            .title-text { font-family: Arial, sans-serif; font-size: 16px; fill: #1e293b; font-weight: bold; }
+            .browser-info { fill: rgba(0,0,0,0.7); }
+            .browser-text { font-family: Arial, sans-serif; font-size: 11px; fill: white; }
+          </style>
+        </defs>
+        
+        <!-- Background -->
+        <rect width="100%" height="100%" class="bg"/>
+        
+        <!-- Browser info -->
+        <rect x="20" y="20" width="120" height="25" rx="4" class="browser-info"/>
+        <text x="25" y="37" class="browser-text">firefox 1366x768</text>
+        
+        <!-- Main container -->
+        <rect x="50" y="80" width="1266" height="200" rx="8" class="container"/>
+        
+        <!-- Error overlay -->
+        <rect x="946" y="30" width="400" height="80" rx="8" class="error-box"/>
+        <text x="956" y="50" class="title-text">Test Failure</text>
+        <foreignObject x="956" y="55" width="380" height="50">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial; font-size: 12px; color: #dc2626; word-wrap: break-word;">
+            Timeout waiting for search results
+          </div>
+        </foreignObject>
+        
+        <!-- DOM representation -->
+        <text x="70" y="120" class="title-text">Failed Test: product search functionality</text>
+        <rect x="70" y="140" width="1226" height="100" rx="4" fill="#f1f5f9" stroke="#cbd5e1"/>
+        
+        <!-- Highlighted failed element -->
+        <rect x="100" y="170" width="150" height="40" rx="4" fill="#fee2e2" stroke="#ef4444" stroke-width="3"/>
+        <text x="105" y="185" class="error-text">Failed Element</text>
+        <text x="105" y="200" class="info-text">Selector not found</text>
+        
+        <!-- Status -->
+        <text x="70" y="728" class="info-text">Screenshot generated: 8/29/2025, 8:27:54 PM</text>
+        <text x="70" y="748" class="info-text">Note: Real-time screenshot unavailable - showing test failure representation</text>
+      </svg>
+    

@@ -311,6 +311,163 @@ export class ScreenshotService {
     `;
   }
 
+  async captureWebsiteScreenshot(url: string, options: {
+    selector?: string;
+    viewport?: string;
+    waitFor?: number;
+    errorOverlay?: {
+      message: string;
+      selector: string;
+    };
+  } = {}): Promise<string> {
+    let browser = null;
+    
+    try {
+      // Launch browser
+      browser = await puppeteer.launch({
+        headless: true,
+        executablePath: process.env.CHROMIUM_PATH || '/nix/store/qa9cnw4v5xkxyip6mb9kxqfq1z4x2dx1-chromium-138.0.7204.100/bin/chromium',
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+          '--disable-extensions',
+          '--no-first-run',
+          '--no-zygote'
+        ]
+      });
+
+      const page = await browser.newPage();
+      
+      // Set viewport
+      const [width, height] = (options.viewport || '1366x768').split('x').map(Number);
+      await page.setViewport({ width, height });
+
+      // Navigate to URL
+      await page.goto(url, { 
+        waitUntil: 'networkidle2',
+        timeout: 30000 
+      });
+
+      // Wait for additional time if specified
+      if (options.waitFor) {
+        await page.waitForTimeout(options.waitFor);
+      }
+
+      // Add error overlay if specified
+      if (options.errorOverlay) {
+        await page.evaluate((overlay) => {
+          // Create error overlay
+          const errorDiv = document.createElement('div');
+          errorDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            border-radius: 8px;
+            padding: 16px;
+            max-width: 400px;
+            z-index: 10000;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #dc2626;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          `;
+          errorDiv.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 8px;">Test Failure</div>
+            <div>${overlay.message}</div>
+            <div style="font-size: 12px; color: #7f1d1d; margin-top: 8px;">
+              Failed selector: ${overlay.selector}
+            </div>
+          `;
+          document.body.appendChild(errorDiv);
+
+          // Try to highlight the failed element if it exists
+          try {
+            const failedElement = document.querySelector(overlay.selector);
+            if (failedElement) {
+              failedElement.style.outline = '3px solid #ef4444';
+              failedElement.style.backgroundColor = '#fee2e2';
+            }
+          } catch (e) {
+            // Selector might not exist, which is the point of the failure
+          }
+        }, options.errorOverlay);
+      }
+
+      // Take screenshot
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `website_${url.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.png`;
+      const screenshotPath = `/cypress/screenshots/${filename}`;
+      const fullPath = path.join(process.cwd(), 'public', screenshotPath);
+
+      // Ensure directory exists
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+
+      // Take screenshot
+      await page.screenshot({ 
+        path: fullPath,
+        fullPage: false 
+      });
+
+      return screenshotPath;
+    } catch (error) {
+      console.error('Error capturing website screenshot:', error);
+      
+      // Fallback to simple SVG
+      return this.generateSimpleFallbackScreenshot(url, options.errorOverlay?.message || 'Failed to load page');
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
+  }
+
+  async generateSimpleFallbackScreenshot(url: string, errorMessage: string): Promise<string> {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filename = `fallback_${url.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp}.svg`;
+    const screenshotPath = `/cypress/screenshots/${filename}`;
+    const fullPath = path.join(process.cwd(), 'public', screenshotPath);
+
+    const svgContent = `
+      <svg width="1366" height="768" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <style>
+            .bg { fill: #f8fafc; }
+            .error-box { fill: #fee2e2; stroke: #ef4444; stroke-width: 2; }
+            .error-text { font-family: Arial, sans-serif; font-size: 14px; fill: #dc2626; }
+            .url-text { font-family: Arial, sans-serif; font-size: 16px; fill: #1e293b; font-weight: bold; }
+          </style>
+        </defs>
+        
+        <!-- Background -->
+        <rect width="100%" height="100%" class="bg"/>
+        
+        <!-- Error overlay -->
+        <rect x="483" y="284" width="400" height="200" rx="8" class="error-box"/>
+        <text x="503" y="320" class="url-text">Test Failure</text>
+        <text x="503" y="350" class="error-text">URL: ${url}</text>
+        <foreignObject x="503" y="370" width="360" height="80">
+          <div xmlns="http://www.w3.org/1999/xhtml" style="font-family: Arial; font-size: 12px; color: #dc2626; word-wrap: break-word;">
+            ${errorMessage}
+          </div>
+        </foreignObject>
+        
+        <text x="503" y="460" style="font-family: Arial; font-size: 11px; fill: #64748b;">
+          Screenshot unavailable - browser error
+        </text>
+      </svg>
+    `;
+
+    await fs.mkdir(path.dirname(fullPath), { recursive: true });
+    await fs.writeFile(fullPath, svgContent);
+    return screenshotPath;
+  }
+
   async generateFallbackScreenshot(failureData: {
     test: string;
     errorMessage: string;
