@@ -1,12 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
-const navigationItems = [
+// Base navigation items without badge data
+const baseNavigationItems = [
   { 
     id: 'failures', 
     label: 'Failures', 
     icon: 'fas fa-exclamation-triangle',
-    badge: '12',
     badgeVariant: 'default' as const,
     path: '/failures'
   },
@@ -14,7 +15,6 @@ const navigationItems = [
     id: 'suggestions', 
     label: 'Suggestions', 
     icon: 'fas fa-lightbulb',
-    badge: '5',
     badgeVariant: 'secondary' as const,
     path: '/suggestions'
   },
@@ -55,6 +55,49 @@ const settingsItems = [
 
 export default function Sidebar() {
   const [location] = useLocation();
+  
+  // Fetch counts for badges
+  const { data: failuresData = [] } = useQuery<any[]>({ 
+    queryKey: ['/api/failures'], 
+    staleTime: 30000 // Cache for 30 seconds
+  });
+  const { data: suggestionsData = [] } = useQuery<any[]>({ 
+    queryKey: ['/api/suggestions'], 
+    staleTime: 30000
+  });
+  const { data: approvalsData = [] } = useQuery<any[]>({ 
+    queryKey: ['/api/approvals'], 
+    staleTime: 30000
+  });
+  const { data: pullRequestsData = [] } = useQuery<any[]>({ 
+    queryKey: ['/api/pull-requests'], 
+    staleTime: 30000
+  });
+  
+  // Create navigation items with real badge counts
+  const navigationItems = baseNavigationItems.map(item => {
+    let badge = '';
+    
+    switch (item.id) {
+      case 'failures':
+        badge = failuresData.length > 0 ? failuresData.length.toString() : '';
+        break;
+      case 'suggestions':
+        badge = suggestionsData.length > 0 ? suggestionsData.length.toString() : '';
+        break;
+      case 'approvals':
+        badge = approvalsData.length > 0 ? approvalsData.length.toString() : '';
+        break;
+      case 'pull-requests':
+        badge = pullRequestsData.length > 0 ? pullRequestsData.length.toString() : '';
+        break;
+    }
+    
+    return {
+      ...item,
+      badge: badge || undefined
+    };
+  });
   
   return (
     <div className="w-64 bg-white border-r border-slate-200 flex flex-col" data-testid="sidebar">

@@ -253,13 +253,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const suggestions = await storage.getSuggestionsByFailureId(failure.id);
         for (const suggestion of suggestions) {
           // Enrich suggestion with failure context
-          allSuggestions.push({
-            ...suggestion,
-            test: failure.test,
-            repo: failure.repo,
-            status: failure.status === 'approved' ? 'approved' : 
-                   failure.status === 'rejected' ? 'rejected' : 'pending'
-          });
+          // Check if this suggestion has been approved or rejected
+          const approvals = await storage.getApprovalsBySuggestionId(suggestion.id);
+          const isApproved = approvals.some(a => a.decision === 'approve');
+          const isRejected = approvals.some(a => a.decision === 'reject');
+          
+          // Only show pending suggestions on the suggestions page
+          if (!isApproved && !isRejected) {
+            allSuggestions.push({
+              ...suggestion,
+              test: failure.test,
+              repo: failure.repo,
+              status: 'pending'
+            });
+          }
         }
       }
       
@@ -481,11 +488,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get only real PRs that have been created in GitHub (have prNumber and prUrl)
       const allPullRequests = await storage.getPullRequests(cleanFilters);
-      const realPullRequests = allPullRequests.filter(pr => 
-        pr.prNumber && 
-        pr.prUrl && 
-        pr.status === 'open' // Only show active PRs
-      );
+      const realPullRequests = allPullRequests
+        .filter(pr => pr.prNumber && pr.prUrl && pr.status === 'open')
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Latest first
       
       console.log(`Fetched ${allPullRequests.length} total PRs, ${realPullRequests.length} are real/active`);
       

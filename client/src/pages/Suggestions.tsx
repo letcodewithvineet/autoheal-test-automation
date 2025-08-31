@@ -1,8 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import DashboardLayout from "@/components/DashboardLayout";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface Suggestion {
   id: string;
@@ -21,9 +23,77 @@ interface Suggestion {
 }
 
 export default function Suggestions() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  
   const { data: suggestions = [], isLoading } = useQuery<Suggestion[]>({
     queryKey: ['/api/suggestions'],
   });
+
+  const approveMutation = useMutation({
+    mutationFn: (suggestionId: string) => 
+      apiRequest(`/api/approvals`, {
+        method: 'POST',
+        body: JSON.stringify({
+          suggestionId,
+          decision: 'approve',
+          approvedBy: 'current-user',
+          notes: 'Approved from suggestions page'
+        })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/suggestions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pull-requests'] });
+      toast({
+        title: 'Success',
+        description: 'Suggestion approved and PR created!',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to approve suggestion',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: (suggestionId: string) => 
+      apiRequest(`/api/approvals`, {
+        method: 'POST',
+        body: JSON.stringify({
+          suggestionId,
+          decision: 'reject',
+          approvedBy: 'current-user',
+          notes: 'Rejected from suggestions page'
+        })
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/suggestions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/approvals'] });
+      toast({
+        title: 'Success',
+        description: 'Suggestion rejected',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reject suggestion',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  const handleApprove = (suggestionId: string) => {
+    approveMutation.mutate(suggestionId);
+  };
+
+  const handleReject = (suggestionId: string) => {
+    rejectMutation.mutate(suggestionId);
+  };
 
   if (isLoading) {
     return (
@@ -85,13 +155,25 @@ export default function Suggestions() {
                 ))}
               </div>
               <div className="flex space-x-2 mt-4">
-                <Button size="sm" className="bg-green-600 hover:bg-green-700" data-testid={`approve-${suggestion.id}`}>
+                <Button 
+                  size="sm" 
+                  className="bg-green-600 hover:bg-green-700" 
+                  data-testid={`approve-${suggestion.id}`}
+                  onClick={() => handleApprove(suggestion.id)}
+                  disabled={approveMutation.isPending}
+                >
                   <i className="fas fa-check mr-2"></i>
-                  Approve
+                  {approveMutation.isPending ? 'Approving...' : 'Approve'}
                 </Button>
-                <Button size="sm" variant="outline" data-testid={`reject-${suggestion.id}`}>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  data-testid={`reject-${suggestion.id}`}
+                  onClick={() => handleReject(suggestion.id)}
+                  disabled={rejectMutation.isPending}
+                >
                   <i className="fas fa-times mr-2"></i>
-                  Reject
+                  {rejectMutation.isPending ? 'Rejecting...' : 'Reject'}
                 </Button>
               </div>
             </CardContent>
