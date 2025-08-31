@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/search/product-search.cy.ts": {
+    "selector_1307934741": "[data-testid='search-submit-btn']"
+  }
+}
