@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/settings/notifications.cy.ts": {
+    "notification-switch": "[data-testid='notification-toggle']"
+  }
+}
