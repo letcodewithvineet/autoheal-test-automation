@@ -32,14 +32,11 @@ export default function Suggestions() {
 
   const approveMutation = useMutation({
     mutationFn: (suggestionId: string) => 
-      apiRequest(`/api/approvals`, {
-        method: 'POST',
-        body: JSON.stringify({
-          suggestionId,
-          decision: 'approve',
-          approvedBy: 'current-user',
-          notes: 'Approved from suggestions page'
-        })
+      apiRequest('POST', '/api/approvals', {
+        suggestionId,
+        decision: 'approve',
+        approvedBy: 'current-user',
+        notes: 'Approved from suggestions page'
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/suggestions'] });
@@ -61,14 +58,11 @@ export default function Suggestions() {
 
   const rejectMutation = useMutation({
     mutationFn: (suggestionId: string) => 
-      apiRequest(`/api/approvals`, {
-        method: 'POST',
-        body: JSON.stringify({
-          suggestionId,
-          decision: 'reject',
-          approvedBy: 'current-user',
-          notes: 'Rejected from suggestions page'
-        })
+      apiRequest('POST', '/api/approvals', {
+        suggestionId,
+        decision: 'reject',
+        approvedBy: 'current-user',
+        notes: 'Rejected from suggestions page'
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/suggestions'] });
