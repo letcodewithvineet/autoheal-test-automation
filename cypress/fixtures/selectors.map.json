@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/dashboard/charts.cy.ts": {
+    "revenue-chart-legend": "[role='img'][aria-label='Revenue Chart']"
+  }
+}
