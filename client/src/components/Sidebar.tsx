@@ -101,7 +101,7 @@ export default function Sidebar() {
   });
   
   return (
-    <div className="w-64 glass-card border-r-0 rounded-r-none rounded-l-none flex flex-col relative z-20" data-testid="sidebar" style={{ borderRadius: '0 20px 20px 0' }}>
+    <div className="w-64 glass-card border-r-0 rounded-r-none rounded-l-none flex flex-col relative z-20 min-h-screen" data-testid="sidebar" style={{ borderRadius: '0 20px 20px 0' }}>
       {/* Logo & Header */}
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center space-x-3">
@@ -117,7 +117,9 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 p-4">
-        <ul className="space-y-1">
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2">Dashboard</h3>
+          <ul className="space-y-1">
           {navigationItems.map((item) => {
             const isActive = location === item.path || (location === '/' && item.id === 'failures');
             const IconComponent = item.icon;
@@ -152,33 +154,35 @@ export default function Sidebar() {
               </li>
             );
           })}
-        </ul>
-
-        <div className="mt-8 pt-4 border-t border-white/10">
-          <ul className="space-y-1">
-            {settingsItems.map((item) => {
-              const isActive = location === item.path;
-              const IconComponent = item.icon;
-              return (
-                <li key={item.id}>
-                  <Link
-                    to={item.path}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                      isActive
-                        ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 border border-cyan-500/30'
-                        : 'text-white/70 hover:text-white hover:bg-white/5 border border-transparent'
-                    }`}
-                    data-testid={`nav-${item.id}`}
-                  >
-                    <IconComponent className={`w-5 h-5 ${
-                      isActive ? 'text-cyan-400' : 'text-white/70 group-hover:text-white'
-                    }`} />
-                    <span className={`${isActive ? 'font-semibold' : 'font-medium'} text-sm`}>{item.label}</span>
-                  </Link>
-                </li>
-              );
-            })}
           </ul>
+
+          <div className="mt-8 pt-4 border-t border-white/10">
+            <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider px-2 mb-2">System</h3>
+            <ul className="space-y-1">
+              {settingsItems.map((item) => {
+                const isActive = location === item.path;
+                const IconComponent = item.icon;
+                return (
+                  <li key={item.id}>
+                    <Link
+                      to={item.path}
+                      className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                        isActive
+                          ? 'bg-gradient-to-r from-cyan-500/20 to-blue-500/20 text-cyan-400 border border-cyan-500/30'
+                          : 'text-white/70 hover:text-white hover:bg-white/5 border border-transparent'
+                      }`}
+                      data-testid={`nav-${item.id}`}
+                    >
+                      <IconComponent className={`w-5 h-5 ${
+                        isActive ? 'text-cyan-400' : 'text-white/70 group-hover:text-white'
+                      }`} />
+                      <span className={`${isActive ? 'font-semibold' : 'font-medium'} text-sm`}>{item.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </div>
       </nav>
 
