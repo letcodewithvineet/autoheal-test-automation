@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertTriangle, Bot, GitBranch, Clock, CheckCircle2 } from "lucide-react";
 
 interface Failure {
   id: string;
@@ -40,15 +39,15 @@ export default function Failures() {
 
   const getStatusBadge = (status: string, suggestionCount = 0, prNumber?: number) => {
     if (prNumber) {
-      return <Badge className="ai-status-approved flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Auto-Fixed</Badge>;
+      return <Badge variant="default" className="bg-green-100 text-green-800">1 Approved</Badge>;
     }
     if (suggestionCount > 0) {
-      return <Badge className="ai-status-pending flex items-center gap-1"><Bot className="w-3 h-3" />{suggestionCount} AI Suggestions</Badge>;
+      return <Badge variant="secondary" className="bg-orange-100 text-orange-800">{suggestionCount} Suggestions</Badge>;
     }
     if (status === 'analyzing') {
-      return <Badge className="ai-badge flex items-center gap-1"><Clock className="w-3 h-3" />AI Analyzing</Badge>;
+      return <Badge variant="outline" className="bg-blue-100 text-blue-800">Analyzing</Badge>;
     }
-    return <Badge className="ai-status-rejected flex items-center gap-1"><AlertTriangle className="w-3 h-3" />Failed</Badge>;
+    return <Badge variant="destructive" className="bg-red-100 text-red-800">Failed</Badge>;
   };
 
   const formatTimeAgo = (timestamp: string) => {
@@ -100,22 +99,17 @@ export default function Failures() {
   }
 
   return (
-    <div className="space-y-6" data-testid="failures-page">
-      {/* AI Header */}
-      <div className="ai-page-header">
+    <div className="min-h-screen w-full bg-slate-50" data-testid="failures-page">
+      {/* Header */}
+      <header className="bg-white border-b border-slate-200 px-6 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="ai-icon bg-gradient-to-r from-cyan-400 to-blue-500 p-3 rounded-lg">
-              <Bot className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold gradient-title" data-testid="page-title">AI Test Failure Analysis</h1>
-              <p className="ai-text-secondary mt-1">Neural network analyzing {failures?.length || 0} test failures across repositories</p>
-            </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800" data-testid="page-title">All Test Failures</h1>
+            <p className="text-slate-600 mt-1">Complete list of test failures across all repositories</p>
           </div>
           <div className="flex items-center space-x-4">
-            {/* AI Filter Controls */}
-            <div className="flex items-center space-x-3">
+            {/* Filter Controls */}
+            <div className="flex items-center space-x-2">
               <Select value={filters.repo || "all"} onValueChange={(value) => setFilters({...filters, repo: value})}>
                 <SelectTrigger className="w-[160px]" data-testid="select-repo">
                   <SelectValue placeholder="All Repos" />
