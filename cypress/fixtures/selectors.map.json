@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/tables/pagination.cy.ts": {
+    "pagination-next": "[data-testid='pagination-next-btn']"
+  }
+}
