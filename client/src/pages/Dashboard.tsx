@@ -23,7 +23,7 @@ export default function Dashboard() {
   const [selectedSuggestion, setSelectedSuggestion] = useState<any>(null);
   const [filters, setFilters] = useState({
     repo: 'all',
-    timeframe: 'week'
+    timeframe: 'all' // Show all failures by default instead of just last week
   });
 
   const handleFailureSelect = (failureId: string) => {

@@ -56,7 +56,7 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
     <header className="bg-white border-b border-slate-200 px-6 py-4" data-testid="topbar">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800" data-testid="page-title">AutoHeal Dashboard</h2>
+          <h2 className="text-2xl font-bold text-slate-800" data-testid="page-title">AI Self Healing Test Automation System</h2>
           <p className="text-slate-600 mt-1">Monitor and resolve failing test cases</p>
         </div>
         <div className="flex items-center space-x-4">
@@ -74,11 +74,12 @@ export default function TopBar({ filters, onFiltersChange }: TopBarProps) {
               </SelectContent>
             </Select>
             
-            <Select value={filters.timeframe || "week"} onValueChange={handleTimeframeChange}>
+            <Select value={filters.timeframe || "all"} onValueChange={handleTimeframeChange}>
               <SelectTrigger className="w-[140px]" data-testid="select-timeframe">
-                <SelectValue placeholder="Last 7 days" />
+                <SelectValue placeholder="All time" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="all">All time</SelectItem>
                 <SelectItem value="week">Last 7 days</SelectItem>
                 <SelectItem value="day">Last 24 hours</SelectItem>
                 <SelectItem value="month">Last month</SelectItem>

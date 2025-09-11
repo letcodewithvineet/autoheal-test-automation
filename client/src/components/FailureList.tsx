@@ -39,7 +39,7 @@ export default function FailureList({ filters, onFailureSelect, selectedFailureI
       }
       
       // Add timeframe filter  
-      if (filters.timeframe) {
+      if (filters.timeframe && filters.timeframe !== 'all') {
         const now = new Date();
         let since: Date;
         
@@ -54,7 +54,8 @@ export default function FailureList({ filters, onFailureSelect, selectedFailureI
             since = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
             break;
           default:
-            since = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000); // Default to week
+            // Don't add date filter for 'all' or unknown values
+            return;
         }
         params.append('since', since.toISOString());
       }
