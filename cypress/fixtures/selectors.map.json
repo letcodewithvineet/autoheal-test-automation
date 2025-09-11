@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/ui/modals.cy.ts": {
+    "selector_9659694": "[data-testid='modal-confirm-btn']"
+  }
+}
