@@ -7,7 +7,7 @@ channel = "stable-25_05"
 packages = ["zip", "chromium"]
 
 [deployment]
-deploymentTarget = "gce"
+deploymentTarget = "cloudrun"
 run = ["sh", "-c", "npm run start"]
 
 [env]
