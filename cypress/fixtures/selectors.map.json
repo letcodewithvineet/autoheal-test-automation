@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/profile/avatar-upload.cy.ts": {
+    "selector_1621867722": "[data-testid='avatar-upload-btn']"
+  }
+}
