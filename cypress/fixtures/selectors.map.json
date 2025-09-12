@@ -1,0 +1,5 @@
+{
+  "cypress/e2e/catalog/filters.cy.ts": {
+    "category-filter": "[data-testid='category-filter-electronics']"
+  }
+}
