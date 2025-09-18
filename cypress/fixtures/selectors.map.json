@@ -1,5 +1,16 @@
 {
   "cypress/e2e/navigation/header.cy.ts": {
     "hamburger-menu": "[data-testid='menu-toggle-btn']"
+  },
+  "cypress/e2e/shopping/cart.cy.ts": {
+    "product-add-btn": "[data-testid=\"add-to-cart\"]"
+  },
+  "_metadata": {
+    "cypress/e2e/shopping/cart.cy.ts.product-add-btn": {
+      "updatedAt": "2025-09-18T13:37:24.794Z",
+      "reason": "AutoHeal selector fix",
+      "originalSelector": ".product-add-btn",
+      "failureId": "68ac2a7d2c1efb1be8bd2b98"
+    }
   }
 }
